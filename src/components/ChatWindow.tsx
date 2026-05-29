@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 
+import { useChat } from "@/context/ChatContext";
+
 type Message = {
     role: "user" | "assistant";
     content: string;
@@ -9,10 +11,9 @@ type Message = {
 
 export default function ChatWindow() {
 
-    const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState("");
-    const [loading, setLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
+    const { messages, loading, sendMessage } = useChat();
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({
@@ -23,25 +24,10 @@ export default function ChatWindow() {
     async function handleSendMessage() {
         if(!input.trim()) return;
 
-        const userMessage: Message = {
-            role: "user",
-            content: input,
-        };
+        await sendMessage(input);
 
-
-        setMessages((prevs) => [...prevs, userMessage]);
         setInput("");
-        setLoading(true);
-
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        const aiMessage: Message = {
-            role: "assistant",
-            content: `You asked: "${userMessage.content}". AI responses will later use uploaded document context.`,
-        };
-
-        setMessages((prev) => [...prev, aiMessage]);
-        setLoading(false);
+       
 
     }
 
@@ -89,7 +75,7 @@ export default function ChatWindow() {
                             }
                           }}
                           placeholder="Ask a question..."
-                          className="flex-1 rounded-xl border border-slate-700 bg-slate-90 px-4 py-3 text-sm text-white outline-none"
+                          className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none"
                     />
 
                     <button

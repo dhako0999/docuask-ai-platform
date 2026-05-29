@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useDocuments } from "@/context/DocumentsContext";
 
 
 
@@ -10,7 +11,8 @@ export default function UploadBox() {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState("");
-    const [documents, setDocuments] = useState<File[]>([]);
+    const { documents, addDocument } = useDocuments();
+
 
     async function handleUpload() {
         if (!selectedFile) return;
@@ -22,7 +24,7 @@ export default function UploadBox() {
       
           await new Promise((resolve) => setTimeout(resolve, 1500));
       
-          setDocuments((prev) => [...prev, selectedFile]);
+          addDocument(selectedFile);
           setSuccess(`${selectedFile.name} uploaded successfully.`);
         } catch {
           setError("Upload failed.");
@@ -108,9 +110,9 @@ export default function UploadBox() {
                             Uploaded documents
                         </h2>
 
-                        {documents.map((doc, index) => (
+                        {documents.map((doc) => (
                             <div
-                                 key={index}
+                                 key={doc.id}
                                  className="rounded-xl border border-slate-700 bg-slate-950 p-4"
                             >
                                 <p className="font-medium text-white">{doc.name}</p>
