@@ -13,7 +13,7 @@ export default function ChatWindow() {
 
     const [input, setInput] = useState("");
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
-    const { messages, loading, sendMessage } = useChat();
+    const { messages, loading, sendMessage, deleteMessage } = useChat();
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({
@@ -50,7 +50,14 @@ export default function ChatWindow() {
                             : "bg-slate-800 text-slate-100"   
                         }`}
                     >
-                        {message.content}
+                        <p>{message.content}</p>
+
+                        <button
+                             onClick={() => deleteMessage(index)}
+                             className="mt-2 text-xs font-red-300 hover:text-red-200"
+                        >
+                            Delete
+                        </button>
                     </div>    
                 ))}
 

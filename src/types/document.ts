@@ -4,5 +4,6 @@ export type UploadedDocument = {
     size: number;
     type: string;
     uploadedAt: string;
+    status: "processing" | "ready";
 
 };

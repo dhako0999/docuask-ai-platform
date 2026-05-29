@@ -10,6 +10,7 @@ type ChatContextType = {
     sendMessage: (content: string) => Promise<void>;
     questionsAsked: number;
     aiResponses: number;
+    deleteMessage: (index: number) => void;
 };
 
 const ChatContext = createContext<ChatContextType | null>(null);
@@ -64,12 +65,17 @@ export function ChatProvider({ children } : { children: React.ReactNode }) {
         setLoading(false);
     }
 
+    async function deleteMessage(index: number) {
+
+        setMessages((prevs) => prevs.filter((_, i) => i !== index));
+    }
+
     const questionsAsked = messages.filter((message) => message.role === "user").length;
 
     const aiResponses = messages.filter((message) => message.role === "assistant").length;
 
     return (
-        <ChatContext.Provider value={{ messages, loading, sendMessage, questionsAsked, aiResponses }}>{children}</ChatContext.Provider>
+        <ChatContext.Provider value={{ messages, loading, sendMessage, questionsAsked, aiResponses, deleteMessage }}>{children}</ChatContext.Provider>
     )
 
 }

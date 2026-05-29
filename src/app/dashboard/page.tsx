@@ -14,7 +14,7 @@ import { Activity } from "@/types/activity";
 
 export default function DashboardPage() {
 
-    const { documents } = useDocuments();
+    const { documents, deleteDocument } = useDocuments();
     const { messages, questionsAsked, aiResponses } = useChat();
 
     const dashboardStats = [
@@ -79,6 +79,39 @@ export default function DashboardPage() {
 
                 </div>
 
+            </div>
+
+            <div className="mt-8 rounded-2xl border border-slate-500 bg-slate-800 p-6">
+                <h2 className="text-xl font-semibold text-white">
+                    Uploaded Documents
+                </h2>
+
+                <div className="mt-4 space-y-3">
+                    {documents.length === 0 ? (
+                        <p className="text-slate-500">
+                            No documents uploaded yet.
+                        </p>
+                    ) : (
+                        documents.map((doc) => (
+                            <div
+                                key={doc.id}
+                                className="rounded-xl bg-slate-950 p-6"
+                            >
+                                <p className="font-medium text-white">{doc.name}</p>
+                                <p className="mt-1 text-sm text-slate-500">{(doc.size / 1024).toFixed(1)} KB</p>
+                                <p className="mt-1 text-xs text-slate-600">Uploaded {new Date(doc.uploadedAt).toLocaleString()}</p>
+                                <p className="mt-1 text-xs text-green-400">Status: {doc.status}</p>
+                                <button
+                                     onClick={() => deleteDocument(doc.id)}
+                                     className="mt-3 text-sm text-red-400 hover:text-red-500"
+                                >
+                                    Delete
+
+                                </button>
+                            </div>
+                        ))
+                    )}
+                </div>
             </div>
         </AppShell>     
     )

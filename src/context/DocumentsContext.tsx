@@ -8,6 +8,7 @@ import { UploadedDocument } from "@/types/document";
 type DocumentsContextType = {
     documents: UploadedDocument[];
     addDocument: (file: File) => void;
+    deleteDocument: (id: string) => void;
 }
 
 
@@ -46,15 +47,20 @@ export function DocumentsProvider({ children }: { children: React.ReactNode; }) 
             size: file.size,
             type: file.type,
             uploadedAt: new Date().toISOString(),
+            status: "ready",
         };
 
         setDocuments((prevs) => [...prevs, newDocument]);
 
     }
 
+    function deleteDocument(id: string) {
+        setDocuments((prevs) => prevs.filter((doc) => doc.id !== id));
+    }
+
 
     return (
-        <DocumentsContext.Provider value={{ documents, addDocument }}>{children}</DocumentsContext.Provider>
+        <DocumentsContext.Provider value={{ documents, addDocument, deleteDocument }}>{children}</DocumentsContext.Provider>
     );
     
 }
