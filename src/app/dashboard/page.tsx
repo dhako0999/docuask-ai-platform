@@ -8,11 +8,15 @@ import { useChat } from "@/context/ChatContext";
 
 //import type { Activity } from "@/types/activity";
 
+import { useState } from "react";
+
 
 export default function DashboardPage() {
 
     const { documents, deleteDocument, selectedDocument, setSelectedDocument } = useDocuments();
     const { messages, questionsAsked, aiResponses } = useChat();
+    const [documentSearch, setDocumentSearch] = useState("");
+    const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
 
 
     const dashboardStats = [
@@ -50,6 +54,47 @@ export default function DashboardPage() {
     const sortedDocuments = [...documents].sort((a, b) => (
        new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
     ));
+
+    const documentSearchIndex = selectedDocument?.content.toLowerCase().indexOf(documentSearch.toLowerCase()) ?? -1;
+
+    const matches: number[] = [];
+
+    if(selectedDocument?.content && documentSearch) {
+        let position = 0;
+
+        while(true) {
+            const found = selectedDocument.content.toLowerCase().indexOf(documentSearch.toLowerCase(), position);
+
+            if(found === -1) break;
+
+            matches.push(found);
+
+            position = found + documentSearch.length;
+        }
+    }
+
+    const currentMatchPosition = matches[currentMatchIndex] ?? -1;
+
+    const searchSnippet = selectedDocument?.content && currentMatchPosition >= 0 ? selectedDocument.content.slice(Math.max(0, currentMatchPosition - 80), (currentMatchPosition + documentSearch.length + 80)) : "";
+
+    function highlightMatch(text: string, query: string) {
+        const index = text.toLowerCase().indexOf(query.toLowerCase());
+
+        if(!query || index === -1) return text;
+
+        return (
+            <>
+               {text.slice(0, index)}
+               <mark className="rounded bg-yellow-400 text-slate-950">
+                  {text.slice(index, index + query.length)}
+               </mark>
+               {text.slice(index + query.length, text.length)}
+            </>
+        )
+
+    }
+
+    
 
     return (
         <AppShell
@@ -181,6 +226,58 @@ export default function DashboardPage() {
                             Preview is only available for TXT files right now.
                         </p>
 
+                    )}
+
+                    {selectedDocument.content && (
+                        <div className="mt-4">
+                            <input
+                                  type="text"
+                                  value={documentSearch}
+                                  onChange={(e) => setDocumentSearch(e.target.value)}
+                                  placeholder="Search..."
+                                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white outline-none"
+                            />
+
+                            {documentSearch && (
+                                <div className="mt-3 rounded-xl bg-slate-900 p-4 text-sm text-slate-300">
+                                    {matches.length > 0 ? (
+                                        <>
+                                           <div className="mb-3 flex items-center gap-3">
+                                               <button
+                                                      //onClick={() => setCurrentMatchIndex((prev) => Math.max(0, prev - 1))}
+                                                      className="text-sm text-blue-400"
+                                                      onClick={() => {
+                                                        setCurrentMatchIndex((prev) => prev === 0 ? matches.length - 1 : prev - 1)
+                                                      }}
+                                               >
+                                                    Previous
+                                               </button>
+
+                                               <span className="text-slate-400">
+                                                 {currentMatchIndex + 1} of {matches.length} {" • "} Position: {currentMatchPosition}
+                                               </span>
+
+                                               <button
+                                                     //onClick={() => setCurrentMatchIndex((prev) => Math.min(matches.length - 1, prev + 1))}
+                                                     //disabled={currentMatchIndex === matches.length - 1}
+                                                     onClick={() => {
+                                                        setCurrentMatchIndex((prev) => prev === matches.length - 1 ? 0 : prev + 1)
+                                                    }}
+                                                     className="text-sm text-blue-400"
+                                               >
+                                                    Next
+                                               </button>
+                                           </div>
+
+                                           <p>{highlightMatch(searchSnippet, documentSearch)}</p>
+                                        </>
+
+                                    ) : (
+                                        <p className="text-slate-500">No match found.</p>
+                                    )}
+                                </div>
+                            )}
+                        </div>   
                     )}
 
                     
