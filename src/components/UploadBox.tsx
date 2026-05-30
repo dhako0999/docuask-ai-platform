@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useDocuments } from "@/context/DocumentsContext";
 
+import { extractPdfText } from "@/lib/pdf";
+
 
 
 export default function UploadBox() {
@@ -26,6 +28,8 @@ export default function UploadBox() {
 
           if (selectedFile.type === "text/plain") {
               content = await selectedFile.text();
+          } else if (selectedFile.type === "application/pdf") {
+            content = await extractPdfText(selectedFile);
           }
 
           const documentId = addDocument(selectedFile, "processing", content);
