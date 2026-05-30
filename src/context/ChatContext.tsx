@@ -61,9 +61,10 @@ export function ChatProvider({ children } : { children: React.ReactNode }) {
 
         const aiMessage: Message = {
             role: "assistant",
-            content: selectedDocument 
-                    ? `You asked "${content}" about "${selectedDocument.name}". AI responses will later use uploaded document content.` 
-                    : `You asked "${content}". AI responses will later use uploaded document context`,
+            content: selectedDocument?.content 
+            ? `You asked "${content}" about "${selectedDocument.name}". Here is a preview from the document: ${selectedDocument.content.slice(0, 500)}`
+            : selectedDocument ? `You asked "${content}" about "${selectedDocument.name}", but this file type does not have any readable text content yet.`
+            : `You asked "${content}". AI responses will layer user uploaded document context.`,   
             createdAt: new Date().toISOString(),
         };
 

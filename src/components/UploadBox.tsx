@@ -11,7 +11,7 @@ export default function UploadBox() {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState("");
-    const { documents, addDocument } = useDocuments();
+    const { documents, addDocument, markDocumentReady } = useDocuments();
 
 
     async function handleUpload() {
@@ -21,10 +21,19 @@ export default function UploadBox() {
           setLoading(true);
           setError("");
           setSuccess("");
-      
+
+          let content = "";
+
+          if (selectedFile.type === "text/plain") {
+              content = await selectedFile.text();
+          }
+
+          const documentId = addDocument(selectedFile, "processing", content);
+         
           await new Promise((resolve) => setTimeout(resolve, 1500));
-      
-          addDocument(selectedFile);
+
+          markDocumentReady(documentId);
+
           setSuccess(`${selectedFile.name} uploaded successfully.`);
         } catch {
           setError("Upload failed.");

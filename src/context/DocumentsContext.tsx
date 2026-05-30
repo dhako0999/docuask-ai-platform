@@ -8,10 +8,11 @@ import { UploadedDocument } from "@/types/document";
 
 type DocumentsContextType = {
     documents: UploadedDocument[];
-    addDocument: (file: File) => void;
+    addDocument: (file: File, status: UploadedDocument["status"], content: string) => string;
     deleteDocument: (id: string) => void;
     selectedDocument: UploadedDocument | null;
     setSelectedDocument: (doc: UploadedDocument | null) => void;
+    markDocumentReady: (id: string) => void;
 };
 
 
@@ -44,17 +45,23 @@ export function DocumentsProvider({ children }: { children: React.ReactNode; }) 
 
     }, [documents, hasLoaded]);
 
-    function addDocument(file: File) {
+    function addDocument(file: File, status: UploadedDocument["status"] = "ready", content: string) {
+
+        const id = crypto.randomUUID();
+
         const newDocument: UploadedDocument = {
-            id: crypto.randomUUID(),
+            id,
             name: file.name,
             size: file.size,
             type: file.type,
             uploadedAt: new Date().toISOString(),
             status: "ready",
+            content,
         };
 
         setDocuments((prevs) => [...prevs, newDocument]);
+
+        return id;
 
     }
 
@@ -62,9 +69,13 @@ export function DocumentsProvider({ children }: { children: React.ReactNode; }) 
         setDocuments((prevs) => prevs.filter((doc) => doc.id !== id));
     }
 
+    function markDocumentReady(id: string) {
+        setDocuments((prevs) => prevs.map((doc) => doc.id === id ? {...doc, status: "ready"} : doc));
+    }
+
 
     return (
-        <DocumentsContext.Provider value={{ documents, addDocument, deleteDocument, selectedDocument, setSelectedDocument, }}>{children}</DocumentsContext.Provider>
+        <DocumentsContext.Provider value={{ documents, addDocument, deleteDocument, selectedDocument, setSelectedDocument, markDocumentReady}}>{children}</DocumentsContext.Provider>
     );
     
 }

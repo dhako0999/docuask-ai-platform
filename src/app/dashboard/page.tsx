@@ -47,6 +47,10 @@ export default function DashboardPage() {
         new Date(b.time).getTime() - new Date(a.time).getTime()
     ));
 
+    const sortedDocuments = [...documents].sort((a, b) => (
+       new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
+    ));
+
     return (
         <AppShell
                 title="Dashboard"
@@ -85,12 +89,12 @@ export default function DashboardPage() {
                 </h2>
 
                 <div className="mt-4 space-y-3">
-                    {documents.length === 0 ? (
+                    {sortedDocuments.length === 0 ? (
                         <p className="text-slate-500">
                             No documents uploaded yet.
                         </p>
                     ) : (
-                        documents.map((doc) => (
+                        sortedDocuments.map((doc) => (
                             <div
                                 key={doc.id}
                                 className="rounded-xl bg-slate-950 p-6"
@@ -159,6 +163,27 @@ export default function DashboardPage() {
                     <p className="text-sm text-slate-300">
                         Uploaded: { new Date(selectedDocument.uploadedAt).toLocaleString() }
                     </p>
+
+                    {selectedDocument.content ? (
+                        <div className="mt-4">
+                            <h4 className="text-sm font-semibold text-white">
+                                Content Preview
+                            </h4>
+
+                            <div className="mt-2 max-h-48 overflow-y-auto rounded-xl p-6 bg-slate-900 text-slate-300 text-sm">
+                                {selectedDocument.content.slice(0, 500)}
+
+                            </div>
+                        </div>
+
+                    ) : (
+                        <p className="mt-4 text-sm text-slate-100">
+                            Preview is only available for TXT files right now.
+                        </p>
+
+                    )}
+
+                    
 
                     <button 
                        className="mt-4 rounded-xl bg-blue-600 px-4 py-2 text-white hover:bg-blue-500"
