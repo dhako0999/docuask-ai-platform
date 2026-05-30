@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from "react";
 
 import { useChat } from "@/context/ChatContext";
 
+import { useDocuments } from "@/context/DocumentsContext";
+
 type Message = {
     role: "user" | "assistant";
     content: string;
@@ -14,6 +16,7 @@ export default function ChatWindow() {
     const [input, setInput] = useState("");
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
     const { messages, loading, sendMessage, deleteMessage } = useChat();
+    const { selectedDocument, setSelectedDocument } = useDocuments();
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({
@@ -24,7 +27,7 @@ export default function ChatWindow() {
     async function handleSendMessage() {
         if(!input.trim()) return;
 
-        await sendMessage(input);
+        await sendMessage(input, selectedDocument);
 
         setInput("");
        
@@ -34,6 +37,24 @@ export default function ChatWindow() {
 
     return (
         <div className="flex h-[700px] flex-col rounded-2xl border border-slate-800 bg-slate-900">
+            {selectedDocument && (
+                <div className="border-b border-slate-800 p-6">
+                    <p className="text-sm text-slate-400">
+                        Answering from document
+                    </p>
+                    <p className="font-medium text-white">
+                        {selectedDocument.name}
+                    </p>
+                    <button
+                        onClick={() => setSelectedDocument(null)}
+                        className="mt-2 text-sm text-slate-400 hover:text-white"
+                    >
+                        Clear Document Context
+
+                    </button>
+                </div>    
+
+            )}
             <div className="flex-1 space-y-4 overflow-y-auto p-6">
                 {messages.length === 0 && (
                     <p className="text-sm text-slate-600">
@@ -54,7 +75,7 @@ export default function ChatWindow() {
 
                         <button
                              onClick={() => deleteMessage(index)}
-                             className="mt-2 text-xs font-red-300 hover:text-red-200"
+                             className="mt-2 text-xs text-red-300 hover:text-red-200"
                         >
                             Delete
                         </button>

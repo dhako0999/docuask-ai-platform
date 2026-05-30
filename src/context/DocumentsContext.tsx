@@ -5,11 +5,14 @@ import { createContext, useContext, useState, useEffect } from "react";
 
 import { UploadedDocument } from "@/types/document";
 
+
 type DocumentsContextType = {
     documents: UploadedDocument[];
     addDocument: (file: File) => void;
     deleteDocument: (id: string) => void;
-}
+    selectedDocument: UploadedDocument | null;
+    setSelectedDocument: (doc: UploadedDocument | null) => void;
+};
 
 
 const DocumentsContext = createContext<DocumentsContextType | undefined>(undefined);
@@ -18,6 +21,7 @@ export function DocumentsProvider({ children }: { children: React.ReactNode; }) 
     //const [documents, setDocuments] = useState<UploadedDocument[]>([]);
     const [documents, setDocuments] = useState<UploadedDocument[]>([]);
     const [hasLoaded, setHasLoaded] = useState(false);
+    const [selectedDocument, setSelectedDocument] = useState<UploadedDocument | null>(null);
 
     useEffect(() => {
         const saved = localStorage.getItem("documents");
@@ -60,7 +64,7 @@ export function DocumentsProvider({ children }: { children: React.ReactNode; }) 
 
 
     return (
-        <DocumentsContext.Provider value={{ documents, addDocument, deleteDocument }}>{children}</DocumentsContext.Provider>
+        <DocumentsContext.Provider value={{ documents, addDocument, deleteDocument, selectedDocument, setSelectedDocument, }}>{children}</DocumentsContext.Provider>
     );
     
 }

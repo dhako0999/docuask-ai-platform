@@ -2,20 +2,18 @@
 
 import AppShell from "@/components/AppShell";
 import DashboardCard from "@/components/DashboardCard";
-import { recentActivity } from "@/lib/mockData";
+//import { recentActivity } from "@/lib/mockData";
 import { useDocuments } from "@/context/DocumentsContext";
 import { useChat } from "@/context/ChatContext";
 
-import { Activity } from "@/types/activity";
-
-
-
+//import type { Activity } from "@/types/activity";
 
 
 export default function DashboardPage() {
 
-    const { documents, deleteDocument } = useDocuments();
+    const { documents, deleteDocument, selectedDocument, setSelectedDocument } = useDocuments();
     const { messages, questionsAsked, aiResponses } = useChat();
+
 
     const dashboardStats = [
         {
@@ -100,19 +98,76 @@ export default function DashboardPage() {
                                 <p className="font-medium text-white">{doc.name}</p>
                                 <p className="mt-1 text-sm text-slate-500">{(doc.size / 1024).toFixed(1)} KB</p>
                                 <p className="mt-1 text-xs text-slate-600">Uploaded {new Date(doc.uploadedAt).toLocaleString()}</p>
-                                <p className="mt-1 text-xs text-green-400">Status: {doc.status}</p>
-                                <button
-                                     onClick={() => deleteDocument(doc.id)}
-                                     className="mt-3 text-sm text-red-400 hover:text-red-500"
-                                >
-                                    Delete
+                                <div className="mt-3 space-y-3">
+                                    <span className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${
+                                        doc.status === "ready" 
+                                        ? "bg-green-900 text-green-300" 
+                                        : "bg-yellow-900 text-yellow-300"
+                                        }`}
+                                        >
+                                        Status: {doc.status}
+                                    </span>
+                                    <div className="flex gap-4 items-center">
+                                        <button
+                                            onClick={() => deleteDocument(doc.id)}
+                                            className="text-sm text-red-400 hover:text-red-500"
+                                        >
+                                            Delete
 
-                                </button>
+                                        </button>
+
+                                        <button
+                                            onClick={() => setSelectedDocument(doc)}
+                                            className="text-sm text-blue-400 hover:text-blue-300"
+                                        >
+                                            View Details
+                                        </button>  
+                                    </div>    
+                                    
+                                </div>  
+
+                               
+                                
                             </div>
                         ))
                     )}
                 </div>
+
+                
             </div>
+
+            {selectedDocument && (
+
+                <div className="mt-6 rounded-xl border border-slate-700 bg-slate-950 p-4">
+                    <h3 className="text-lg font-semibold text-white">
+                        {selectedDocument.name}
+                    </h3>
+
+                    <p className="mt-2 text-sm text-slate-500">
+                        Type: {selectedDocument.type}
+                    </p>
+
+                    <p className="text-sm text-slate-300">
+                        Size: {(selectedDocument.size / 1024).toFixed(1)} KB
+
+                    </p>
+
+                    <p className="text-sm text-slate-300">
+                        Status: {selectedDocument.status}
+                    </p>
+
+                    <p className="text-sm text-slate-300">
+                        Uploaded: { new Date(selectedDocument.uploadedAt).toLocaleString() }
+                    </p>
+
+                    <button 
+                       className="mt-4 rounded-xl bg-blue-600 px-4 py-2 text-white hover:bg-blue-500"
+                    >
+                        Ask About This Document
+                    </button>
+                </div>    
+
+            )}
         </AppShell>     
     )
 }

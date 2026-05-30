@@ -2,12 +2,15 @@
 
 import { useState, useEffect, useContext, createContext } from "react";
 
-import { Message } from "@/types/message";
+import type { Message } from "@/types/message";
+
+import type { UploadedDocument } from "@/types/document";
+
 
 type ChatContextType = {
     messages: Message[];
     loading: boolean;
-    sendMessage: (content: string) => Promise<void>;
+    sendMessage: (content: string, selectedDocument?: UploadedDocument | null) => Promise<void>;
     questionsAsked: number;
     aiResponses: number;
     deleteMessage: (index: number) => void;
@@ -20,6 +23,7 @@ export function ChatProvider({ children } : { children: React.ReactNode }) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [loading, setLoading] = useState(false);
     const [hasLoaded, setHasLoaded] = useState(false);
+
 
     useEffect(() => {
 
@@ -40,7 +44,7 @@ export function ChatProvider({ children } : { children: React.ReactNode }) {
 
     }, [messages, hasLoaded]);
 
-    async function sendMessage(content: string) {
+    async function sendMessage(content: string, selectedDocument?: UploadedDocument | null) {
         if(!content.trim()) return;
 
         const userMessage: Message = {
@@ -57,7 +61,9 @@ export function ChatProvider({ children } : { children: React.ReactNode }) {
 
         const aiMessage: Message = {
             role: "assistant",
-            content: `You asked "${content}". AI responses will later use uploaded document context.`,
+            content: selectedDocument 
+                    ? `You asked "${content}" about "${selectedDocument.name}". AI responses will later use uploaded document content.` 
+                    : `You asked "${content}". AI responses will later use uploaded document context`,
             createdAt: new Date().toISOString(),
         };
 
@@ -65,7 +71,7 @@ export function ChatProvider({ children } : { children: React.ReactNode }) {
         setLoading(false);
     }
 
-    async function deleteMessage(index: number) {
+    function deleteMessage(index: number) {
 
         setMessages((prevs) => prevs.filter((_, i) => i !== index));
     }
