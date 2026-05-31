@@ -16,7 +16,7 @@ export default function ChatWindow() {
     const [input, setInput] = useState("");
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
     const { messages, loading, sendMessage, deleteMessage } = useChat();
-    const { selectedDocument, setSelectedDocument } = useDocuments();
+    const { selectedDocument, setSelectedDocument, documents } = useDocuments();
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({
@@ -27,7 +27,7 @@ export default function ChatWindow() {
     async function handleSendMessage() {
         if(!input.trim()) return;
 
-        await sendMessage(input, selectedDocument);
+        await sendMessage(input, selectedDocument, documents);
 
         setInput("");
        

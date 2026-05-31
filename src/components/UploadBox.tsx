@@ -5,6 +5,8 @@ import { useDocuments } from "@/context/DocumentsContext";
 
 import { extractPdfText } from "@/lib/pdf";
 
+import { extractDocxText } from "@/lib/docx";
+
 
 
 export default function UploadBox() {
@@ -30,6 +32,8 @@ export default function UploadBox() {
               content = await selectedFile.text();
           } else if (selectedFile.type === "application/pdf") {
             content = await extractPdfText(selectedFile);
+          } else if (selectedFile.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+            content = await extractDocxText(selectedFile);
           }
 
           const documentId = addDocument(selectedFile, "processing", content);

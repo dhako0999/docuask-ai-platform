@@ -17,7 +17,7 @@ export default function DashboardPage() {
     const { messages, questionsAsked, aiResponses } = useChat();
     const [documentSearch, setDocumentSearch] = useState("");
     const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
-
+    const [globalDocumentSearch, setGlobalDocumentSearch] = useState("");
 
     const dashboardStats = [
         {
@@ -94,6 +94,54 @@ export default function DashboardPage() {
 
     }
 
+    const globalSearchResults = documents.filter((doc) => {
+        if(!globalDocumentSearch.trim()) return false;
+        if(!doc.content) return false;
+
+        const query = globalDocumentSearch.toLowerCase();
+
+        return doc.content.toLowerCase().includes(query) || doc.name.toLowerCase().includes(query);
+    }).map((doc) => {
+
+        const query = globalDocumentSearch.toLowerCase();
+
+        const nameMatch = doc.name.toLowerCase().includes(query);
+        const contentMatch = doc.content.toLowerCase().includes(query);
+
+        const matchIndex = doc.content.toLowerCase().indexOf(query);
+
+
+        const snippet = contentMatch && matchIndex >= 0 ? doc.content.slice(Math.max(0, matchIndex - 80), matchIndex + globalDocumentSearch.length + 80) : nameMatch ? "Matched document name." : "";
+
+        const contentMatches = contentMatch ? doc.content.toLowerCase().split(globalDocumentSearch.toLowerCase()).length - 1 : 0;
+
+        return {
+            document: doc,
+            snippet,
+            matches: contentMatches,
+            nameMatch,
+            contentMatch,
+        };
+    })
+    .sort((a, b) => {
+        if(a.contentMatch !== b.contentMatch) {
+            return a.contentMatch ? -1 : 1;
+        }
+
+        return b.matches - a.matches;
+
+    });
+
+    const recentQuestions = messages.filter((message) => message.role === "user").slice(-5).reverse();
+
+    const recentAIResponses = messages.filter((message) => message.role === "assistant").slice(-5).reverse();
+
+    const wordCount = selectedDocument?.content ? selectedDocument.content.trim().split(/\s+/).length : 0;
+
+    const characterCount = selectedDocument?.content.length || 0;
+
+    const readingTimeMinutes = Math.max(1, Math.ceil(wordCount / 200));
+
     
 
     return (
@@ -105,6 +153,62 @@ export default function DashboardPage() {
                 {dashboardStats.map((stat, index) => (
                     <DashboardCard key={stat.label} label={stat.label} value={stat.value}/>
                 ))}
+            </div>
+
+            <div className="mt-8 rounded-2xl border border-slate-700 bg-slate-900 p-6">
+                <h2 className="text-xl font-semibold text-white">
+                    Recent Questions
+                </h2>
+
+                <div className="mt-3 space-y-3">
+                    {recentQuestions.length === 0 ? (
+                        <p className="text-sm text-slate-500">No questions asked yet.</p>
+                    ) : (
+                        recentQuestions.map((question, index) => (
+                            <div
+                                key={index}
+                                className="rounded-xl bg-slate-950 p-4"
+                            >
+                                <p className="text-sm text-white">
+                                    {question.content}
+                                </p>
+
+                                <p className="mt-1 text-xs text-slate-500">
+                                    Asked {new Date(question.createdAt).toLocaleString()}
+                                </p>
+                            </div>    
+                        ))
+                    )}
+                </div>
+
+            </div>
+
+            <div className="mt-8 rounded-2xl border border-slate-700 bg-slate-900 p-6">
+                <h2 className="text-xl font-semibold text-white">
+                    Recent Responses
+                </h2>
+
+                <div className="mt-3 space-y-3">
+                    {recentAIResponses.length === 0 ? (
+                        <p className="text-sm text-slate-500">No responses yet.</p>
+                    ) : (
+                        recentAIResponses.map((response, index) => (
+                            <div 
+                                key={index}
+                                className="rounded-xl bg-slate-950 p-4"
+                            
+                            >
+                                <p className="text-sm text-white">
+                                    {response.content}
+                                </p>
+                                <p className="mt-1 text-xs text-slate-500">
+                                    {new Date(response.createdAt).toLocaleString()}
+                                </p>
+                            </div>
+
+                        ))
+                    )}
+                </div>
             </div>
 
             <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-900 p-6">
@@ -209,6 +313,14 @@ export default function DashboardPage() {
                         Uploaded: { new Date(selectedDocument.uploadedAt).toLocaleString() }
                     </p>
 
+                    <p className="text-sm text-slate-300">
+                        Words: {wordCount}
+                    </p>
+
+                    <p className="text-sm text-slate-300">
+                        Reading Time: {readingTimeMinutes} {readingTimeMinutes !== 1 ? "mins" : "min"}
+                    </p>
+
                     {selectedDocument.content ? (
                         <div className="mt-4">
                             <h4 className="text-sm font-semibold text-white">
@@ -290,6 +402,55 @@ export default function DashboardPage() {
                 </div>    
 
             )}
+
+            <div className="mt-8 rounded-2xl border border-slate-700 bg-slate-900 p-6">
+                <h2 className="text-xl font-semibold text-white">
+                    Search Across Documents
+                </h2>
+
+                <input 
+                    value={globalDocumentSearch}
+                    onChange={(e) => setGlobalDocumentSearch(e.target.value)}
+                    placeholder="Search all uploaded documents..."
+                    className="mt-4 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none"
+                />
+
+                {globalDocumentSearch && (
+                    <div className="mt-4 space-y-4">
+                        {globalSearchResults.length === 0 ? (
+                            <p className="text-sm text-slate-500">
+                                No matches found across your documents
+                            </p>
+                        ) : (
+                            globalSearchResults.map((result) => (
+                                <div
+                                    key={result.document.id}
+                                    className="rounded-xl bg-slate-950 p-4"
+                                >
+                                    <p className="font-medium text-white">
+                                        {result.document.name}
+                                    </p>
+
+                                    <p className="mt-2 text-sm text-slate-300">
+                                        {highlightMatch(result.snippet, globalDocumentSearch)}
+                                    </p>
+
+                                    <p className="mt-1 text-xs text-slate-500">
+                                        {result.matches} {result.matches !== 1 ? "matches" : "match"}
+                                    </p>
+
+                                    <button
+                                        onClick={() => setSelectedDocument(result.document)}
+                                        className="mt-3 text-sm text-blue-400 hover:text-blue-300"
+                                    >
+                                        View Document
+                                    </button>
+                                </div>    
+                            ))
+                        )}
+                    </div>    
+                )}
+            </div>
         </AppShell>     
     )
 }

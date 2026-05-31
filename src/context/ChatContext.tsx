@@ -10,7 +10,7 @@ import type { UploadedDocument } from "@/types/document";
 type ChatContextType = {
     messages: Message[];
     loading: boolean;
-    sendMessage: (content: string, selectedDocument?: UploadedDocument | null) => Promise<void>;
+    sendMessage: (content: string, selectedDocument: UploadedDocument | null, documents: UploadedDocument[]) => Promise<void>;
     questionsAsked: number;
     aiResponses: number;
     deleteMessage: (index: number) => void;
@@ -44,7 +44,7 @@ export function ChatProvider({ children } : { children: React.ReactNode }) {
 
     }, [messages, hasLoaded]);
 
-    async function sendMessage(content: string, selectedDocument?: UploadedDocument | null) {
+    async function sendMessage(content: string, selectedDocument: UploadedDocument | null, documents: UploadedDocument[]) {
         if(!content.trim()) return;
 
         const userMessage: Message = {
@@ -59,16 +59,44 @@ export function ChatProvider({ children } : { children: React.ReactNode }) {
 
         await new Promise((resolve) => setTimeout(resolve, 1000));
 
+        let aiContent = "";
+
+        if(selectedDocument?.content) {
+            aiContent = `You asked "${content}" about "${selectedDocument.name}". Here is a preview from the document: ${selectedDocument.content.slice(0, 500)}`;
+        } else if(selectedDocument) {
+            aiContent = `You asked "${content}" about "${selectedDocument.name}", but this file type does not have any readable text content yet.`;
+        } else {
+            const query = content.toLowerCase();
+
+            const results = documents.filter((doc) => doc.content.toLowerCase().includes(query))
+            .map((doc) => {
+                const matchIndex = doc.content.toLowerCase().indexOf(query);
+
+                const snippet = doc.content.slice(Math.max(0, matchIndex - 120), (matchIndex + query.length + 120));
+
+                const matches = doc.content.toLowerCase().split(query).length - 1;
+
+                return {
+                    document: doc,
+                    snippet,
+                    matches,
+                };
+
+            })
+            .sort((a, b) => b.matches - a.matches);
+
+            aiContent = results.length > 0 ? `I found this in "${results[0].document.name}": ${results[0].snippet}`
+            : `I could not find an exact match for "${content}" in your uploaded documents.`;
+
+        }
+
         const aiMessage: Message = {
             role: "assistant",
-            content: selectedDocument?.content 
-            ? `You asked "${content}" about "${selectedDocument.name}". Here is a preview from the document: ${selectedDocument.content.slice(0, 500)}`
-            : selectedDocument ? `You asked "${content}" about "${selectedDocument.name}", but this file type does not have any readable text content yet.`
-            : `You asked "${content}". AI responses will layer user uploaded document context.`,   
+            content: aiContent,
             createdAt: new Date().toISOString(),
         };
 
-        setMessages((prev) => [...prev, aiMessage]);
+        setMessages((prevs) => [...prevs, aiMessage]);
         setLoading(false);
     }
 
