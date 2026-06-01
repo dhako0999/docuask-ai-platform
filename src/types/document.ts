@@ -6,5 +6,6 @@ export type UploadedDocument = {
     uploadedAt: string;
     status: "uploading" | "processing" | "ready" | "failed";
     content: string;
+    s3Key?: string;
 
 };

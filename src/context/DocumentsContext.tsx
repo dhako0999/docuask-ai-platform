@@ -8,7 +8,7 @@ import { UploadedDocument } from "@/types/document";
 
 type DocumentsContextType = {
     documents: UploadedDocument[];
-    addDocument: (file: File, status: UploadedDocument["status"], content: string) => string;
+    addDocument: (file: File, status: UploadedDocument["status"], content: string, s3Key?: string) => string;
     deleteDocument: (id: string) => void;
     selectedDocument: UploadedDocument | null;
     setSelectedDocument: (doc: UploadedDocument | null) => void;
@@ -45,7 +45,7 @@ export function DocumentsProvider({ children }: { children: React.ReactNode; }) 
 
     }, [documents, hasLoaded]);
 
-    function addDocument(file: File, status: UploadedDocument["status"] = "ready", content: string) {
+    function addDocument(file: File, status: UploadedDocument["status"] = "ready", content: string, s3Key: string) {
 
         const id = crypto.randomUUID();
 
@@ -57,6 +57,7 @@ export function DocumentsProvider({ children }: { children: React.ReactNode; }) 
             uploadedAt: new Date().toISOString(),
             status: "ready",
             content,
+            s3Key,
         };
 
         setDocuments((prevs) => [...prevs, newDocument]);

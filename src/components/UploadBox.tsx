@@ -3,8 +3,6 @@
 import { useState } from "react";
 import { useDocuments } from "@/context/DocumentsContext";
 
-import { extractPdfText } from "@/lib/pdf";
-
 import { extractDocxText } from "@/lib/docx";
 
 
@@ -31,12 +29,42 @@ export default function UploadBox() {
           if (selectedFile.type === "text/plain") {
               content = await selectedFile.text();
           } else if (selectedFile.type === "application/pdf") {
+            const { extractPdfText } = await import("@/lib/pdf");
             content = await extractPdfText(selectedFile);
           } else if (selectedFile.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
             content = await extractDocxText(selectedFile);
           }
 
-          const documentId = addDocument(selectedFile, "processing", content);
+          const presignedRes = await fetch("/api/s3/presigned-upload", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                fileName: selectedFile.name,
+                fileType: selectedFile.type,
+            }),
+          });
+
+          const presignedData = await presignedRes.json();
+
+          if(!presignedRes.ok) {
+             throw new Error(presignedData.error || "Failed to create upload URL");
+          }
+
+          const uploadRes = await fetch(presignedData.uploadUrl, {
+            method: "PUT",
+            headers: {
+                "Content-Type": selectedFile.type,
+            },
+            body: selectedFile,
+          });
+
+          if(!uploadRes.ok) {
+            throw new Error("Failed to upload file to S3");
+          }
+
+          const documentId = addDocument(selectedFile, "processing", content, presignedData.key);
          
           await new Promise((resolve) => setTimeout(resolve, 1500));
 
