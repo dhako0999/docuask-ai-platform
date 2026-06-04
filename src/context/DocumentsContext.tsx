@@ -8,11 +8,12 @@ import { UploadedDocument } from "@/types/document";
 
 type DocumentsContextType = {
     documents: UploadedDocument[];
-    addDocument: (file: File, status: UploadedDocument["status"], content: string, s3Key?: string) => string;
+    addDocument: (file: File, status: UploadedDocument["status"], content: string, s3Key: string) => string;
     deleteDocument: (id: string) => void;
     selectedDocument: UploadedDocument | null;
     setSelectedDocument: (doc: UploadedDocument | null) => void;
     markDocumentReady: (id: string) => void;
+
 };
 
 
@@ -21,29 +22,11 @@ const DocumentsContext = createContext<DocumentsContextType | undefined>(undefin
 export function DocumentsProvider({ children }: { children: React.ReactNode; }) {
     //const [documents, setDocuments] = useState<UploadedDocument[]>([]);
     const [documents, setDocuments] = useState<UploadedDocument[]>([]);
-    const [hasLoaded, setHasLoaded] = useState(false);
     const [selectedDocument, setSelectedDocument] = useState<UploadedDocument | null>(null);
 
     useEffect(() => {
-        const saved = localStorage.getItem("documents");
-
-        if(saved) {
-            setDocuments(JSON.parse(saved));
-        }
-
-        setHasLoaded(true);
+        fetchDocuments();
     }, []);
-
-
-
-
-    useEffect(() => {
-
-        if(!hasLoaded) return;
-
-        localStorage.setItem("documents", JSON.stringify(documents));
-
-    }, [documents, hasLoaded]);
 
     function addDocument(file: File, status: UploadedDocument["status"] = "ready", content: string, s3Key: string) {
 
@@ -72,6 +55,27 @@ export function DocumentsProvider({ children }: { children: React.ReactNode; }) 
 
     function markDocumentReady(id: string) {
         setDocuments((prevs) => prevs.map((doc) => doc.id === id ? {...doc, status: "ready"} : doc));
+    }
+
+    async function fetchDocuments() {
+        try {
+
+            const res = await fetch("/api/documents", {
+                method: "GET",  
+            });
+
+            if(!res.ok) {
+                throw new Error("Failed to fetch documents");
+            }
+
+            const data = await res.json();
+
+            setDocuments(data);
+
+        } catch (error) {
+            console.error("Error fetching documents: ", error);
+
+        } 
     }
 
 
