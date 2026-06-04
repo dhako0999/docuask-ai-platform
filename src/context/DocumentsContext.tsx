@@ -9,7 +9,7 @@ import { UploadedDocument } from "@/types/document";
 type DocumentsContextType = {
     documents: UploadedDocument[];
     addDocument: (file: File, status: UploadedDocument["status"], content: string, s3Key: string) => string;
-    deleteDocument: (id: string) => void;
+    deleteDocument: (id: string) => Promise<void>;
     selectedDocument: UploadedDocument | null;
     setSelectedDocument: (doc: UploadedDocument | null) => void;
     markDocumentReady: (id: string) => void;
@@ -49,9 +49,6 @@ export function DocumentsProvider({ children }: { children: React.ReactNode; }) 
 
     }
 
-    function deleteDocument(id: string) {
-        setDocuments((prevs) => prevs.filter((doc) => doc.id !== id));
-    }
 
     function markDocumentReady(id: string) {
         setDocuments((prevs) => prevs.map((doc) => doc.id === id ? {...doc, status: "ready"} : doc));
@@ -76,6 +73,24 @@ export function DocumentsProvider({ children }: { children: React.ReactNode; }) 
             console.error("Error fetching documents: ", error);
 
         } 
+    }
+
+    async function deleteDocument(id: string) {
+        try {
+
+            const res = await fetch(`/api/documents/${id}`, {
+                method: "DELETE",
+            });
+
+            if(!res.ok) {
+                throw new Error("Failed to delete document");
+            }
+
+            setDocuments((prevs) => prevs.filter((doc) => doc.id !== id));
+
+        } catch (error) {
+            console.error("Delete document error: ", error);
+        }
     }
 
 
