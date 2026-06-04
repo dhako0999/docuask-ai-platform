@@ -65,13 +65,36 @@ export default function UploadBox() {
           }
 
           const documentId = addDocument(selectedFile, "processing", content, presignedData.key);
+
+          
+          const saveDocumentRes = await fetch("/api/documents", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                name: selectedFile.name,
+                size: selectedFile.size,
+                type: selectedFile.type,
+                s3Key: presignedData.key,
+                content,
+                status: "ready",
+            }),
+          });
+
+          const savedDocument = await saveDocumentRes.json();
+
+          if(!saveDocumentRes.ok) {
+            throw new Error(savedDocument.error || "Failed to save document");
+          }
          
           await new Promise((resolve) => setTimeout(resolve, 1500));
 
           markDocumentReady(documentId);
 
           setSuccess(`${selectedFile.name} uploaded successfully.`);
-        } catch {
+        } catch (error) {
+          console.error("Upload failed: ", error);
           setError("Upload failed.");
         } finally {
           setLoading(false);

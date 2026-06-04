@@ -29,3 +29,24 @@ export async function POST(req: Request) {
       );
     }
   }
+
+export async function GET() {
+    try {
+
+      const documents = await prisma.document.findMany({
+        orderBy: {
+          uploadedAt: "desc",
+        }
+      });
+
+      return NextResponse.json(documents);
+
+    } catch (error) {
+       console.error("Fetch documents error:", error);
+
+       return NextResponse.json(
+         { error: "Failed to fetch documents" },
+         { status: 500 }
+       );
+    }
+}  
