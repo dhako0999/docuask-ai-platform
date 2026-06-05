@@ -24,11 +24,21 @@ const schema = createSchema({
       createdAt: String!
     }
 
+    input CreateDocumentInput {
+      name: String!,
+      size: Int!,
+      type: String!,
+      s3Key: String!,
+      content: String!,
+      status: String!
+    }
+
     type Query {
       documents: [Document!]!
     }
 
     type Mutation {
+      createDocument(input: CreateDocumentInput!): Document!
       deleteDocument(id: ID!): Boolean!
     }
   `,
@@ -70,6 +80,31 @@ const schema = createSchema({
         });
 
         return true;
+      },
+      createDocument: async (
+        _parent,
+        args: {
+          input: {
+            name: string;
+            size: number;
+            type: string;
+            s3Key: string;
+            content: string;
+            status: string;
+          }
+        }
+      ) => {
+        return prisma.document.create({
+           data: {
+              name: args.input.name,
+              size: args.input.size,
+              type: args.input.type,
+              s3Key: args.input.s3Key,
+              content: args.input.content,
+              status: args.input.status,
+           },
+
+        });
       },
     },
   },

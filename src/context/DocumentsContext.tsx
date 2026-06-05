@@ -5,6 +5,10 @@ import { createContext, useContext, useState, useEffect } from "react";
 
 import { UploadedDocument } from "@/types/document";
 
+import { graphqlRequest } from "@/lib/graphql";
+
+
+
 
 type DocumentsContextType = {
     documents: UploadedDocument[];
@@ -54,7 +58,7 @@ export function DocumentsProvider({ children }: { children: React.ReactNode; }) 
         setDocuments((prevs) => prevs.map((doc) => doc.id === id ? {...doc, status: "ready"} : doc));
     }
 
-    async function fetchDocuments() {
+    /*async function fetchDocuments() {
         try {
 
             const res = await fetch("/api/documents", {
@@ -73,9 +77,41 @@ export function DocumentsProvider({ children }: { children: React.ReactNode; }) 
             console.error("Error fetching documents: ", error);
 
         } 
+    }*/
+
+    
+    async function fetchDocuments() {
+        try {
+
+            const data = await graphqlRequest<{
+                documents: UploadedDocument[]
+            }>(
+                `
+                  query {
+                     documents {
+                        id
+                        name
+                        size
+                        type
+                        s3Key
+                        content
+                        status
+                        uploadedAt
+                        createdAt
+                     }
+                  }
+            `);
+
+            setDocuments(data.documents);
+
+
+        } catch (error) {
+            console.error("Fetch documents error: ", error);
+
+        }
     }
 
-    async function deleteDocument(id: string) {
+    /*async function deleteDocument(id: string) {
         try {
 
             const res = await fetch(`/api/documents/${id}`, {
@@ -85,6 +121,27 @@ export function DocumentsProvider({ children }: { children: React.ReactNode; }) 
             if(!res.ok) {
                 throw new Error("Failed to delete document");
             }
+
+            setDocuments((prevs) => prevs.filter((doc) => doc.id !== id));
+
+        } catch (error) {
+            console.error("Delete document error: ", error);
+        }
+    }*/
+
+    async function deleteDocument(id: string) {
+        try {
+
+            await graphqlRequest<{
+                deleteDocument: Boolean;
+            }>(
+                `
+                   mutation DeleteDocument($id: ID!) {
+                      deleteDocument(id: $id)
+                   }
+                `,
+                { id }
+            );
 
             setDocuments((prevs) => prevs.filter((doc) => doc.id !== id));
 
