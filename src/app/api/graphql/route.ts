@@ -1,6 +1,7 @@
 import { createSchema, createYoga } from "graphql-yoga";
 import { prisma } from "@/lib/prisma";
 import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { openai } from "@/lib/openai";
 
 const s3 = new S3Client({
   region: process.env.AWS_REGION!,
@@ -9,6 +10,7 @@ const s3 = new S3Client({
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
   },
 });
+
 
 const schema = createSchema({
   typeDefs: /* GraphQL */ `
@@ -25,11 +27,11 @@ const schema = createSchema({
     }
 
     input CreateDocumentInput {
-      name: String!,
-      size: Int!,
-      type: String!,
-      s3Key: String!,
-      content: String!,
+      name: String!
+      size: Int!
+      type: String!
+      s3Key: String!
+      content: String!
       status: String!
     }
 
@@ -40,7 +42,13 @@ const schema = createSchema({
     type Mutation {
       createDocument(input: CreateDocumentInput!): Document!
       deleteDocument(id: ID!): Boolean!
+      askQuestion(documentId: ID!, question: String!): AskQuestionResponse!
     }
+
+    type AskQuestionResponse {
+      answer: String!
+    }
+
   `,
 
   resolvers: {
@@ -106,6 +114,41 @@ const schema = createSchema({
 
         });
       },
+      askQuestion: async (
+        _parent,
+        args: { documentId: string, question: string }
+      ) => {
+        const document = await prisma.document.findUnique({
+          where: {
+            id: args.documentId
+          }
+        });
+
+        if(!document) {
+          throw new Error("Document not found");
+        }
+
+        const response = await openai.responses.create({
+          model: "gpt-5.5",
+          instructions: `
+              You are a document Q&A assistant.
+              Answer only using the provided document content.
+              If the answer is not in the document, say:
+              "I could not find that information in the document."
+          `,
+          input: `
+              Document name: ${document.name}
+              Document content: ${document.content.slice(0, 12000)}
+              User question: ${args.question}
+          `,
+
+        });
+
+        return {
+          answer: response.output_text,
+        }
+
+      }
     },
   },
 });
