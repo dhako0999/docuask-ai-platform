@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { openai } from "@/lib/openai";
 
+
 const s3 = new S3Client({
   region: process.env.AWS_REGION!,
   credentials: {
@@ -37,6 +38,7 @@ const schema = createSchema({
 
     type Query {
       documents: [Document!]!
+      conversation(documentId: ID!): Conversation
     }
 
     type Mutation {
@@ -49,6 +51,22 @@ const schema = createSchema({
       answer: String!
     }
 
+    type Conversation {
+      id: ID!
+      documentId: ID!
+      createdAt: String!
+      messages: [ChatMessage!]!
+    
+    }
+
+    type ChatMessage {
+      id: ID!
+      conversationId: ID!
+      role: String!
+      content: String!
+      createdAt: String!
+    }
+
   `,
 
   resolvers: {
@@ -57,6 +75,20 @@ const schema = createSchema({
         return prisma.document.findMany({
           orderBy: {
             uploadedAt: "desc",
+          },
+        });
+      },
+      conversation: async (_parent, args: { documentId: string }) => {
+        return prisma.conversation.findFirst({
+          where: {
+            documentId: args.documentId,
+          },
+          include: {
+            messages: {
+              orderBy: {
+                createdAt: "asc",
+              },
+            },
           },
         });
       },
@@ -128,6 +160,21 @@ const schema = createSchema({
           throw new Error("Document not found");
         }
 
+        let conversation = await prisma.conversation.findFirst({
+          where: {
+            documentId: args.documentId
+          },
+        });
+
+
+        if(!conversation) {
+           conversation = await prisma.conversation.create({
+               data: {
+                  documentId: args.documentId
+               },
+           });
+        }
+
         const response = await openai.responses.create({
           model: "gpt-5.5",
           instructions: `
@@ -142,6 +189,24 @@ const schema = createSchema({
               User question: ${args.question}
           `,
 
+        });
+
+        await prisma.chatMessage.create({
+          data: {
+            conversationId: conversation.id,
+            role: "user",
+            content: args.question,
+          },
+            
+        });
+
+        await prisma.chatMessage.create({
+          data: {
+            conversationId: conversation.id,
+            role: "assistant",
+            content: response.output_text,
+          },
+           
         });
 
         return {

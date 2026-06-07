@@ -6,6 +6,8 @@ import type { Message } from "@/types/message";
 
 import type { UploadedDocument } from "@/types/document";
 
+import { graphqlRequest } from "@/lib/graphql";
+
 
 type ChatContextType = {
     messages: Message[];
@@ -14,6 +16,7 @@ type ChatContextType = {
     questionsAsked: number;
     aiResponses: number;
     deleteMessage: (index: number) => void;
+    fetchConversation: (documentId: string) => Promise<void>;
 };
 
 const ChatContext = createContext<ChatContextType | null>(null);
@@ -57,47 +60,102 @@ export function ChatProvider({ children } : { children: React.ReactNode }) {
         setMessages((prev) => [...prev, userMessage]);
         setLoading(true);
 
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        try {
+            let aiContent = "";
 
-        let aiContent = "";
+            if(selectedDocument) {
+                const data = await graphqlRequest<{
+                   askQuestion: {
+                       answer: string;
+                   };
+                }>(
+                    `
+                       mutation AskQuestion($documentId: ID!, $question: String!) {
+                           askQuestion(documentId: $documentId, question: $question) {
+                               answer
+                           
+                           }
+                       
+                       }
+                    
+                    `,
+                    {
+                        documentId: selectedDocument.id,
+                        question: content,
+                    }
+                );
 
-        if(selectedDocument?.content) {
-            aiContent = `You asked "${content}" about "${selectedDocument.name}". Here is a preview from the document: ${selectedDocument.content.slice(0, 500)}`;
-        } else if(selectedDocument) {
-            aiContent = `You asked "${content}" about "${selectedDocument.name}", but this file type does not have any readable text content yet.`;
-        } else {
-            const query = content.toLowerCase();
+                aiContent = data.askQuestion.answer;
+            } else {
+                aiContent = "Please select a document before asking a question.";
+            }
 
-            const results = documents.filter((doc) => doc.content.toLowerCase().includes(query))
-            .map((doc) => {
-                const matchIndex = doc.content.toLowerCase().indexOf(query);
+            const aiMessage: Message = {
+                role: "assistant",
+                content: aiContent,
+                createdAt: new Date().toISOString(),
+            }
 
-                const snippet = doc.content.slice(Math.max(0, matchIndex - 120), (matchIndex + query.length + 120));
+            setMessages((prevs) => [...prevs, aiMessage]);
 
-                const matches = doc.content.toLowerCase().split(query).length - 1;
+        } catch (error) {
+            console.error("Send message error: ", error);
 
-                return {
-                    document: doc,
-                    snippet,
-                    matches,
-                };
+            const errorMessage: Message = {
+                role: "assistant",
+                content: "Sorry, I could not answer that question.",
+                createdAt: new Date().toISOString(),
+            };
 
-            })
-            .sort((a, b) => b.matches - a.matches);
+            setMessages((prevs) => [...prevs, errorMessage]);
 
-            aiContent = results.length > 0 ? `I found this in "${results[0].document.name}": ${results[0].snippet}`
-            : `I could not find an exact match for "${content}" in your uploaded documents.`;
+        } finally {
+            setLoading(false);
 
         }
+        
+    }
 
-        const aiMessage: Message = {
-            role: "assistant",
-            content: aiContent,
-            createdAt: new Date().toISOString(),
-        };
-
-        setMessages((prevs) => [...prevs, aiMessage]);
-        setLoading(false);
+    async function fetchConversation(documentId: string) {
+        try {
+          const data = await graphqlRequest<{
+            conversation: {
+              id: string;
+              messages: {
+                id: string;
+                role: "user" | "assistant";
+                content: string;
+                createdAt: string;
+              }[];
+            } | null;
+          }>(
+            `
+              query Conversation($documentId: ID!) {
+                conversation(documentId: $documentId) {
+                  id
+                  messages {
+                    id
+                    role
+                    content
+                    createdAt
+                  }
+                }
+              }
+            `,
+            { documentId }
+          );
+      
+          const loadedMessages =
+            data.conversation?.messages.map((message) => ({
+              role: message.role,
+              content: message.content,
+              createdAt: message.createdAt,
+            })) ?? [];
+      
+          setMessages(loadedMessages);
+        } catch (error) {
+          console.error("Fetch conversation error:", error);
+        }
     }
 
     function deleteMessage(index: number) {
@@ -110,7 +168,7 @@ export function ChatProvider({ children } : { children: React.ReactNode }) {
     const aiResponses = messages.filter((message) => message.role === "assistant").length;
 
     return (
-        <ChatContext.Provider value={{ messages, loading, sendMessage, questionsAsked, aiResponses, deleteMessage }}>{children}</ChatContext.Provider>
+        <ChatContext.Provider value={{ messages, loading, sendMessage, questionsAsked, aiResponses, deleteMessage, fetchConversation }}>{children}</ChatContext.Provider>
     )
 
 }

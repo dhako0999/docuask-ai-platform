@@ -15,7 +15,7 @@ export default function ChatWindow() {
 
     const [input, setInput] = useState("");
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
-    const { messages, loading, sendMessage, deleteMessage } = useChat();
+    const { messages, loading, sendMessage, deleteMessage, fetchConversation } = useChat();
     const { selectedDocument, setSelectedDocument, documents } = useDocuments();
 
     useEffect(() => {
@@ -23,6 +23,12 @@ export default function ChatWindow() {
             behavior: "smooth"
         });
     }, [messages, loading]);
+
+    useEffect(() => {
+        if(!selectedDocument) return;
+
+        fetchConversation(selectedDocument.id);
+    }, [selectedDocument]);
 
     async function handleSendMessage() {
         if(!input.trim()) return;
