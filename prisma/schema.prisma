@@ -18,6 +18,7 @@ model Document {
   uploadedAt DateTime @default(now())
   createdAt  DateTime @default(now())
   conversations Conversation[]
+  chunks        DocumentChunk[]
 }
 
 model Conversation {
@@ -37,5 +38,17 @@ model ChatMessage {
   createdAt      DateTime @default(now())
 
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
+
+model DocumentChunk {
+  id          String   @id @default(uuid())
+  documentId  String
+  content     String
+  chunkIndex  Int
+  tokenCount  Int?
+  embedding   Unsupported("vector(1536)")?
+  createdAt   DateTime @default(now())
+  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  @@index([documentId])
 }
 

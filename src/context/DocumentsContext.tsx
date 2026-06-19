@@ -13,10 +13,12 @@ import { graphqlRequest } from "@/lib/graphql";
 type DocumentsContextType = {
     documents: UploadedDocument[];
     addDocument: (file: File, status: UploadedDocument["status"], content: string, s3Key: string) => string;
+    addCreatedDocument: (document: UploadedDocument) => void;
     deleteDocument: (id: string) => Promise<void>;
     selectedDocument: UploadedDocument | null;
     setSelectedDocument: (doc: UploadedDocument | null) => void;
     markDocumentReady: (id: string) => void;
+    fetchDocuments: () => void;
 
 };
 
@@ -51,6 +53,11 @@ export function DocumentsProvider({ children }: { children: React.ReactNode; }) 
 
         return id;
 
+    }
+
+    function addCreatedDocument(document: UploadedDocument) {
+        setDocuments((prevs) => [...prevs, document]);
+        setSelectedDocument(document);
     }
 
 
@@ -152,7 +159,7 @@ export function DocumentsProvider({ children }: { children: React.ReactNode; }) 
 
 
     return (
-        <DocumentsContext.Provider value={{ documents, addDocument, deleteDocument, selectedDocument, setSelectedDocument, markDocumentReady}}>{children}</DocumentsContext.Provider>
+        <DocumentsContext.Provider value={{ documents, addDocument, addCreatedDocument, deleteDocument, selectedDocument, setSelectedDocument, markDocumentReady, fetchDocuments}}>{children}</DocumentsContext.Provider>
     );
     
 }

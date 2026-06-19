@@ -16,7 +16,7 @@ export default function UploadBox() {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState("");
-    const { documents, addDocument, markDocumentReady } = useDocuments();
+    const { documents, addDocument, addCreatedDocument, markDocumentReady, fetchDocuments } = useDocuments();
 
 
     async function handleUpload() {
@@ -67,7 +67,7 @@ export default function UploadBox() {
             throw new Error("Failed to upload file to S3");
           }
 
-          const documentId = addDocument(selectedFile, "processing", content, presignedData.key);
+          //const documentId = addDocument(selectedFile, "processing", content, presignedData.key);
 
           
           /*const saveDocumentRes = await fetch("/api/documents", {
@@ -92,7 +92,7 @@ export default function UploadBox() {
           }*/
 
           
-          await graphqlRequest<{
+        const data = await graphqlRequest<{
             createDocument: UploadedDocument;
             }>(
             `
@@ -117,15 +117,19 @@ export default function UploadBox() {
                     type: selectedFile.type,
                     s3Key: presignedData.key,
                     content,
-                    status: "ready",
+                    status: "processing",
                 },
             }
          );
             
          
-          await new Promise((resolve) => setTimeout(resolve, 1500));
+          addCreatedDocument(data.createDocument);
 
-          markDocumentReady(documentId);
+          setTimeout(() => {
+            fetchDocuments();
+          }, 4000);
+
+          //markDocumentReady(documentId);
 
           setSuccess(`${selectedFile.name} uploaded successfully.`);
         } catch (error) {

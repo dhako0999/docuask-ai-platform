@@ -252,13 +252,13 @@ export default function DashboardPage() {
                                 <p className="mt-1 text-sm text-slate-500">{(doc.size / 1024).toFixed(1)} KB</p>
                                 <p className="mt-1 text-xs text-slate-600">Uploaded {new Date(doc.uploadedAt).toLocaleString()}</p>
                                 <div className="mt-3 space-y-3">
-                                    <span className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${
-                                        doc.status === "ready" 
-                                        ? "bg-green-900 text-green-300" 
-                                        : "bg-yellow-900 text-yellow-300"
-                                        }`}
-                                        >
-                                        Status: {doc.status}
+                                    <span className={`inline-block rounded-full px-2 py-1 text-xs font-medium 
+                                        ${doc.status === "ready" 
+                                            ? "bg-green-900 text-green-300" : doc.status === "failed" 
+                                            ? "bg-red-900 text-red-300" : "bg-yellow-900 text-yello-300"
+                                        }
+                                        `}>
+                                            Status: {doc.status.charAt(0).toUpperCase() + doc.status.slice(1)}
                                     </span>
                                     <div className="flex gap-4 items-center">
                                         <button
