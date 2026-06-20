@@ -34,6 +34,20 @@ export function DocumentsProvider({ children }: { children: React.ReactNode; }) 
         fetchDocuments();
     }, []);
 
+    useEffect(() => {
+        if (!selectedDocument) return;
+      
+        const updatedSelectedDocument = documents.find(
+          (doc) => doc.id === selectedDocument.id
+        );
+      
+        if (!updatedSelectedDocument) return;
+      
+        if (updatedSelectedDocument.status !== selectedDocument.status) {
+          setSelectedDocument(updatedSelectedDocument);
+        }
+    }, [documents, selectedDocument]);
+
     function addDocument(file: File, status: UploadedDocument["status"] = "ready", content: string, s3Key: string) {
 
         const id = crypto.randomUUID();

@@ -111,7 +111,7 @@ def process_document(document_id: str):
             with conn.cursor() as cur:
                 cur.execute(
                     'UPDATE "Document" SET "status" = %s WHERE "id" = %s',
-                    ("FAILED", document_id),
+                    ("failed", document_id),
                 )
             conn.commit()
 

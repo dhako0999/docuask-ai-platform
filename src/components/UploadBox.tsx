@@ -143,93 +143,95 @@ export default function UploadBox() {
 
 
     return (
-        <div className="rounded-2xl border border-dashed border-slate-600 bg-slate-900 p-8 text-center">
-            <p className="text-lg font-semibold text-white">Upload a document.</p>
+        <div className="rounded-3xl border border-dashed border-emerald-200 bg-white/85 p-8 text-center shadow-xl shadow-slate-200/70 backdrop-blur">
+            <p className="text-lg font-semibold text-slate-950">
+                Upload a document.
+            </p>
 
             <p className="mt-2 text-sm text-slate-600">
-                PDF, DOCX, or TXT files will be supported.
+                PDF, DOCX, or TXT files are supported.
             </p>
 
             <input
                 type="file"
                 accept=".pdf, .docx, .txt"
-                className="mt-6 block w-full cursor-pointer rounded-xl border border-slate-700 bg-slate-950 p-3 text-sm text-slate-300"
+                className="mt-6 block w-full cursor-pointer rounded-xl border border-slate-300 bg-slate-50 p-3 text-sm text-slate-700 file:mr-4 file:rounded-lg file:border-0 file:bg-emerald-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:bg-white"
                 onChange={(e) => {
-                    const file = e.target.files?.[0] ?? null;
+                const file = e.target.files?.[0] ?? null;
 
-                    if(!file) {
-                        setSelectedFile(null);
-                        return;
-                    }
+                if (!file) {
+                    setSelectedFile(null);
+                    return;
+                }
 
-                    const allowedTypes = [
-                        "application/pdf",
-                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                        "text/plain"
-                    ];
+                const allowedTypes = [
+                    "application/pdf",
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    "text/plain",
+                ];
 
-                    const maxSize = 10 * 1024 * 1024;
+                const maxSize = 10 * 1024 * 1024;
 
-                    if(!allowedTypes.includes(file.type)) {
-                        setError("Only PDF, DOCX, or TXT files are allowed.");
-                        setSelectedFile(null);
-                        return;
-                    }
+                if (!allowedTypes.includes(file.type)) {
+                    setError("Only PDF, DOCX, or TXT files are allowed.");
+                    setSelectedFile(null);
+                    return;
+                }
 
-                    if(file.size > maxSize) {
-                        setError("File size must be smaller than 10 MB.");
-                        setSelectedFile(null);
-                        return;
-                    }
+                if (file.size > maxSize) {
+                    setError("File size must be smaller than 10 MB.");
+                    setSelectedFile(null);
+                    return;
+                }
 
-                    setError("");
-                    setSelectedFile(file);
+                setError("");
+                setSelectedFile(file);
                 }}
-                />
+            />
 
-                {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
+            {error && <p className="mt-4 text-sm font-medium text-red-600">{error}</p>}
 
-                {selectedFile && (
-                    <div className="mt-6 rounded-xl border border-slate-700 bg-slate-950 p-4 text-left">
-                        <p className="text-sm text-slat-600">Selected file</p>
-                        <p className="mt-1 font-medium text-white">{selectedFile.name}</p>
-                        <p className="mt-1 text-sm text-slate-500">
-                            {(selectedFile.size / 1024).toFixed(1)} KB
-                        </p>
-                    </div>    
-                )}
+            {selectedFile && (
+                <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left">
+                <p className="text-sm font-medium text-slate-500">Selected file</p>
+                <p className="mt-1 font-semibold text-slate-900">{selectedFile.name}</p>
+                <p className="mt-1 text-sm text-slate-500">
+                    {(selectedFile.size / 1024).toFixed(1)} KB
+                </p>
+                </div>
+            )}
 
-                <button
-                       onClick={handleUpload}
-                       disabled={!selectedFile || loading}
-                       className="mt-6 rounded-xl bg-white px-5 py-3 font-semibold text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                        {loading ? "Uploading..." : "Upload document"}
-                </button>
+            <button
+                onClick={handleUpload}
+                disabled={!selectedFile || loading}
+                className="mt-6 rounded-xl bg-emerald-600 px-6 py-3 font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+                {loading ? "Uploading..." : "Upload document"}
+            </button>
 
-                {success && (
-                    <p className="mt-4 text-sm text-green-400">{success}</p>
-                )}
+            {success && (
+                <p className="mt-4 text-sm font-medium text-emerald-700">{success}</p>
+            )}
 
-                {documents.length > 0 && (
-                    <div className="mt-8 space-y-3 text-left">
-                        <h2 className="text-lg font-semibold text-white">
-                            Uploaded documents
-                        </h2>
+            {documents.length > 0 && (
+                <div className="mt-8 space-y-3 text-left">
+                <h2 className="text-lg font-semibold text-slate-950">
+                    Uploaded documents
+                </h2>
 
-                        {documents.map((doc) => (
-                            <div
-                                 key={doc.id}
-                                 className="rounded-xl border border-slate-700 bg-slate-950 p-4"
-                            >
-                                <p className="font-medium text-white">{doc.name}</p>
-                                <p className="mt-1 text-sm text-slate-500">{(doc.size / 1024).toFixed(1)} KB</p>
-                            </div>    
-
-                        ))}
-                    </div>    
-                )}
-
+                {documents.map((doc) => (
+                    <div
+                    key={doc.id}
+                    className="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm"
+                    >
+                    <p className="font-semibold text-slate-900">{doc.name}</p>
+                    <p className="mt-1 text-sm text-slate-500">
+                        {(doc.size / 1024).toFixed(1)} KB
+                    </p>
+                    </div>
+                ))}
+                </div>
+            )}
         </div>
     )
 }

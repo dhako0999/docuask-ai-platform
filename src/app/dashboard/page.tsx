@@ -10,6 +10,8 @@ import { useChat } from "@/context/ChatContext";
 
 import { useState } from "react";
 
+import DocumentStatusBadge from "@/components/DocumentStatusBadge";
+
 
 export default function DashboardPage() {
 
@@ -18,6 +20,7 @@ export default function DashboardPage() {
     const [documentSearch, setDocumentSearch] = useState("");
     const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
     const [globalDocumentSearch, setGlobalDocumentSearch] = useState("");
+    const [activeSection, setActiveSection] = useState<"questions" | "responses" | "activity" | "documents" | "search">("questions")
 
     const dashboardStats = [
         {
@@ -142,6 +145,18 @@ export default function DashboardPage() {
 
     const readingTimeMinutes = Math.max(1, Math.ceil(wordCount / 200));
 
+    function formatDate(value?: string) {
+        if(!value) return "Date unavailable";
+
+        const date = new Date(value);
+
+        if(Number.isNaN(date.getTime())) {
+            return "Date unavailable";
+        }
+
+        return date.toLocaleString();
+    }
+
     
 
     return (
@@ -155,237 +170,353 @@ export default function DashboardPage() {
                 ))}
             </div>
 
-            <div className="mt-8 rounded-2xl border border-slate-700 bg-slate-900 p-6">
-                <h2 className="text-xl font-semibold text-white">
-                    Recent Questions
-                </h2>
+            <div className="mt-8 flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white/80 p-2 shadow-sm">
+                {[
+                    { key: "questions", label: "Recent Questions" },
+                    { key: "responses", label: "Recent Responses" },
+                    { key: "activity", label: "Recent Activity" },
+                    { key: "documents", label: "Uploaded Documents" },
+                    { key: "search", label: "Search Documents" },
+                ].map((tab) => (
+                    <button
+                            key={tab.key}
+                            onClick={(e) => setActiveSection(tab.key as typeof activeSection)}
+                            className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${activeSection === tab.key ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
+                    >
+                            {tab.label}
+                    </button>
+                ))}
+            </div>
 
-                <div className="mt-3 space-y-3">
-                    {recentQuestions.length === 0 ? (
-                        <p className="text-sm text-slate-500">No questions asked yet.</p>
-                    ) : (
-                        recentQuestions.map((question, index) => (
-                            <div
-                                key={index}
-                                className="rounded-xl bg-slate-950 p-4"
-                            >
-                                <p className="text-sm text-white">
-                                    {question.content}
+            {activeSection === "questions" && (
+                <div className="mt-8 rounded-3xl border border-slate-200 bg-white/85 p-6 shadow-xl shadow-slate-200/70 backdrop-blur">
+                    <h2 className="text-xl font-semibold text-slat-950">
+                        Recent Questions
+                    </h2>
+    
+                    <div className="mt-4 space-y-3">
+                        {recentQuestions.length === 0 ? (
+                            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+                                <h2 className="text-sm text-slate-500">
+                                    No questions asked yet.
+                                </h2>
+                            </div>    
+                        ) : (
+                            recentQuestions.map((question, index) => (
+                                <div
+                                    key={index}
+                                    className="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm transition hover:border-emerald-200"
+                                >
+                                    <p className="text-sm text-slate-800">
+                                        {question.content}
+                                    </p>
+    
+                                    <p className="mt-2 text-xs text-slate-500">
+                                        Asked {new Date(question.createdAt).toLocaleString()}
+                                    </p>
+                                </div>    
+                            ))
+                        )}
+                    </div>
+    
+                </div>
+
+            )}
+
+            {activeSection === "responses" && (
+                <div className="mt-8 rounded-3xl border border-slate-200 bg-white/85 p-6 shadow-xl shadow-slate-200">
+                    <h2 className="text-xl font-semibold text-slate-950">
+                        Recent Responses
+                    </h2>
+
+                    <div className="mt-4 space-y-3">
+                        {recentAIResponses.length === 0 ? (
+                            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+                                <p className="text-sm text-slate-500">No responses yet.</p>
+                            </div>    
+                        ) : (
+                            recentAIResponses.map((response, index) => (
+                                <div 
+                                    key={index}
+                                    className="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm transition hover:border-emerald-200"
+                                
+                                >
+                                    <p className="text-sm text-slate-800">
+                                        {response.content}
+                                    </p>
+                                    <p className="mt-2 text-xs text-slate-500">
+                                        {new Date(response.createdAt).toLocaleString()}
+                                    </p>
+                                </div>
+
+                            ))
+                        )}
+                    </div>
+                </div>
+
+            )}
+
+            {activeSection === "activity" && (
+                <div className="mt-8 rounded-3xl border border-slate-200 bg-white/85 p-6 shadow-xl shadow-slate-200/70 backdrop-blur">
+                    <h2 className="text-xl font-semibold text-slate-950">
+                        Recent Activity
+                    </h2>
+                    <div className="mt-4 space-y-4">
+                        {recentActivity.map((activity, index) => (
+                            <div key={index} className="rounded-xl border border-slate-200 bg-slate-50 p-4 shadow-sm transition hover:border-emerald-200">
+                                <p className="font-medium text-slate-900">
+                                {activity.title}
                                 </p>
+                    
+                                <p className="mt-1 text-sm text-slate-500">
+                                {formatDate(activity.time)}
+                                </p>
+                            </div>
+                        ))}
 
-                                <p className="mt-1 text-xs text-slate-500">
-                                    Asked {new Date(question.createdAt).toLocaleString()}
+                    </div>
+
+                </div>
+
+            )}
+
+            {activeSection === "documents" && (
+                <div className="mt-8 rounded-3xl border border-slate-200 bg-white/85 p-6 shadow-xl shadow-slate-200/70 backdrop-blur">
+                    <h2 className="text-xl font-semibold text-slate-950">
+                        Uploaded Documents
+                    </h2>
+
+                    <div className="mt-4 space-y-4">
+                        {sortedDocuments.length === 0 ? (
+                            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+                                <p className="text-sm text-slate-500">
+                                    No documents uploaded yet.
                                 </p>
                             </div>    
-                        ))
-                    )}
-                </div>
+                        
+                        ) : (
+                            sortedDocuments.map((doc) => (
+                                <div
+                                    key={doc.id}
+                                    className="rounded-2xl border border-slate-200 bg-slate-50 p-6 shadow-sm transition hover:border-emerald-200"
+                                >
+                                    <p className="font-semibold text-slate-900">{doc.name}</p>
+                                    <p className="mt-1 text-slate-500">{(doc.size / 1024).toFixed(1)} KB</p>
+                                    <p className="mt-1 text-xs text-slate-500">Uploaded {new Date(doc.uploadedAt).toLocaleString()}</p>
+                                    <div className="mt-4 space-y-3">
+                                        <DocumentStatusBadge status={doc.status} />
+                                        <div className="flex items-center gap-4">
+                                            <button
+                                                onClick={() => deleteDocument(doc.id)}
+                                                className="text-sm font-medium text-red-600 hover:text-red-700"
+                                            >
+                                                Delete
 
-            </div>
+                                            </button>
 
-            <div className="mt-8 rounded-2xl border border-slate-700 bg-slate-900 p-6">
-                <h2 className="text-xl font-semibold text-white">
-                    Recent Responses
-                </h2>
+                                            <button
+                                                onClick={() => setSelectedDocument(doc)}
+                                                disabled={doc.status === "processing"}
+                                                className="text-sm font-medium text-emerald-700 hover:text-emerald-800"
+                                            >
+                                                View Details
+                                            </button>  
+                                        </div>    
+                                        
+                                    </div>  
 
-                <div className="mt-3 space-y-3">
-                    {recentAIResponses.length === 0 ? (
-                        <p className="text-sm text-slate-500">No responses yet.</p>
-                    ) : (
-                        recentAIResponses.map((response, index) => (
-                            <div 
-                                key={index}
-                                className="rounded-xl bg-slate-950 p-4"
-                            
-                            >
-                                <p className="text-sm text-white">
-                                    {response.content}
-                                </p>
-                                <p className="mt-1 text-xs text-slate-500">
-                                    {new Date(response.createdAt).toLocaleString()}
-                                </p>
-                            </div>
-
-                        ))
-                    )}
-                </div>
-            </div>
-
-            <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-900 p-6">
-                <h2 className="text-xl font-semibold text-white">
-                    Recent Activity
-                </h2>
-                <div className="mt-4 space-y-4">
-                    {recentActivity.map((activity, index) => (
-                        <div key={index} className="rounded-xl bg-slate-950 p-4">
-                            <p className="text-white">
-                            {activity.title}
-                            </p>
-                
-                            <p className="mt-1 text-sm text-slate-500">
-                            {new Date(activity.time).toLocaleString()}
-                            </p>
-                        </div>
-                    ))}
-
-                </div>
-
-            </div>
-
-            <div className="mt-8 rounded-2xl border border-slate-500 bg-slate-800 p-6">
-                <h2 className="text-xl font-semibold text-white">
-                    Uploaded Documents
-                </h2>
-
-                <div className="mt-4 space-y-3">
-                    {sortedDocuments.length === 0 ? (
-                        <p className="text-slate-500">
-                            No documents uploaded yet.
-                        </p>
-                    ) : (
-                        sortedDocuments.map((doc) => (
-                            <div
-                                key={doc.id}
-                                className="rounded-xl bg-slate-950 p-6"
-                            >
-                                <p className="font-medium text-white">{doc.name}</p>
-                                <p className="mt-1 text-sm text-slate-500">{(doc.size / 1024).toFixed(1)} KB</p>
-                                <p className="mt-1 text-xs text-slate-600">Uploaded {new Date(doc.uploadedAt).toLocaleString()}</p>
-                                <div className="mt-3 space-y-3">
-                                    <span className={`inline-block rounded-full px-2 py-1 text-xs font-medium 
-                                        ${doc.status === "ready" 
-                                            ? "bg-green-900 text-green-300" : doc.status === "failed" 
-                                            ? "bg-red-900 text-red-300" : "bg-yellow-900 text-yello-300"
-                                        }
-                                        `}>
-                                            Status: {doc.status.charAt(0).toUpperCase() + doc.status.slice(1)}
-                                    </span>
-                                    <div className="flex gap-4 items-center">
-                                        <button
-                                            onClick={() => deleteDocument(doc.id)}
-                                            className="text-sm text-red-400 hover:text-red-500"
-                                        >
-                                            Delete
-
-                                        </button>
-
-                                        <button
-                                            onClick={() => setSelectedDocument(doc)}
-                                            className="text-sm text-blue-400 hover:text-blue-300"
-                                        >
-                                            View Details
-                                        </button>  
-                                    </div>    
-                                    
-                                </div>  
-
-                               
                                 
-                            </div>
-                        ))
-                    )}
+                                    
+                                </div>
+                            ))
+                        )}
+                    </div>
+
+                    
                 </div>
 
-                
-            </div>
 
+            )}
+
+
+            
             {selectedDocument && (
 
-                <div className="mt-6 rounded-xl border border-slate-700 bg-slate-950 p-4">
-                    <h3 className="text-lg font-semibold text-white">
-                        {selectedDocument.name}
-                    </h3>
+                <div className="mt-6 rounded-3xl border border-slate-200 bg-white/85 p-6 shadow-xl shadow-slate-200/50 backdrop-blur">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-emerald-700">
+                                Selected Document
+                            </p>
 
-                    <p className="mt-2 text-sm text-slate-500">
-                        Type: {selectedDocument.type}
-                    </p>
+                            <h3 className="mt-1 text-xl font-semibold text-slate-950">
+                                {selectedDocument.name}
+                            </h3>
+                        </div>
 
-                    <p className="text-sm text-slate-300">
-                        Size: {(selectedDocument.size / 1024).toFixed(1)} KB
 
-                    </p>
+                        <span
+                             className={`inline-flex w-fit rounded-full px-3 py-1 text-xs font-semibold ${
+                                selectedDocument.status === "ready"
+                                ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
+                                : "bg-amber-50 text-amber-700 ring-1 ring-amber-200"
+                             }`}
+                        >
+                                {selectedDocument.status.charAt(0).toUpperCase() + selectedDocument.status.slice(1)}
+                        </span>
 
-                    <p className="text-sm text-slate-300">
-                        Status: {selectedDocument.status}
-                    </p>
+                    </div>
 
-                    <p className="text-sm text-slate-300">
-                        Uploaded: { new Date(selectedDocument.uploadedAt).toLocaleString() }
-                    </p>
+                    {selectedDocument.status === "processing" && (
+                            <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                                 This document is still processing. You can view metadata now, but Q&A will be available once processing finishes.
+                            </div>
+                        )}
 
-                    <p className="text-sm text-slate-300">
-                        Words: {wordCount}
-                    </p>
+                    {selectedDocument.status === "failed" && (
+                        <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+                            Document processing failed. Delete this document and upload it again.
+                        </div>    
+                    )}
 
-                    <p className="text-sm text-slate-300">
-                        Reading Time: {readingTimeMinutes} {readingTimeMinutes !== 1 ? "mins" : "min"}
-                    </p>
+                    <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                                Type
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-slate-900">
+                                {selectedDocument.type}
+                            </p>
+
+                        </div>
+
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                                Size
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-slate-900">
+                                {(selectedDocument.size / 1024).toFixed(1)} KB
+                            </p>
+
+                        </div>
+
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                                Status
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-slate-900">
+                                {selectedDocument.status}
+                            </p>
+
+                        </div>
+
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                                Uploaded
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-slate-900">
+                                {new Date(selectedDocument.uploadedAt).toLocaleString()} 
+                            </p>
+
+                        </div>
+
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                                Words
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-slate-900">
+                                {wordCount} 
+                            </p>
+
+                        </div>
+
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                                Reading Time
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-slate-900">
+                                {readingTimeMinutes} {readingTimeMinutes !== 1 ? "mins" : "min"}
+                            </p>
+
+                        </div>
+
+                       
+
+                    </div>
 
                     {selectedDocument.content ? (
-                        <div className="mt-4">
-                            <h4 className="text-sm font-semibold text-white">
-                                Content Preview
-                            </h4>
+                        <div className="mt-6">
+                                <h4 className="text-sm font-semibold text-slate-950">
+                                    Content Preview
+                                </h4>
 
-                            <div className="mt-2 max-h-48 overflow-y-auto rounded-xl p-6 bg-slate-900 text-slate-300 text-sm">
-                                {selectedDocument.content.slice(0, 500)}
+                                <div className="mt-2 max-h-48 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
+                                    {selectedDocument.content.slice(0, 500)}
 
-                            </div>
+                                </div>
                         </div>
 
                     ) : (
-                        <p className="mt-4 text-sm text-slate-100">
+                        <p className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
                             Preview is only available for TXT files right now.
                         </p>
 
                     )}
+                    
+
+                   
 
                     {selectedDocument.content && (
                         <div className="mt-4">
                             <input
-                                  type="text"
-                                  value={documentSearch}
-                                  onChange={(e) => setDocumentSearch(e.target.value)}
-                                  placeholder="Search..."
-                                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white outline-none"
+                                type="text"
+                                value={documentSearch}
+                                onChange={(e) => setDocumentSearch(e.target.value)}
+                                placeholder="Search within this document..."
+                                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
                             />
 
                             {documentSearch && (
-                                <div className="mt-3 rounded-xl bg-slate-900 p-4 text-sm text-slate-300">
+                                <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 shadow-sm">
                                     {matches.length > 0 ? (
-                                        <>
-                                           <div className="mb-3 flex items-center gap-3">
-                                               <button
-                                                      //onClick={() => setCurrentMatchIndex((prev) => Math.max(0, prev - 1))}
-                                                      className="text-sm text-blue-400"
-                                                      onClick={() => {
-                                                        setCurrentMatchIndex((prev) => prev === 0 ? matches.length - 1 : prev - 1)
-                                                      }}
-                                               >
-                                                    Previous
-                                               </button>
+                                    <>
+                                        <div className="mb-3 flex flex-wrap items-center gap-3">
+                                        <button
+                                            className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700 transition hover:bg-emerald-100"
+                                            onClick={() => {
+                                            setCurrentMatchIndex((prev) =>
+                                                prev === 0 ? matches.length - 1 : prev - 1
+                                            );
+                                            }}
+                                        >
+                                            Previous
+                                        </button>
 
-                                               <span className="text-slate-400">
-                                                 {currentMatchIndex + 1} of {matches.length} {" • "} Position: {currentMatchPosition}
-                                               </span>
+                                        <span className="text-sm text-slate-500">
+                                            {currentMatchIndex + 1} of {matches.length} {" • "} Position:{" "}
+                                            {currentMatchPosition}
+                                        </span>
 
-                                               <button
-                                                     //onClick={() => setCurrentMatchIndex((prev) => Math.min(matches.length - 1, prev + 1))}
-                                                     //disabled={currentMatchIndex === matches.length - 1}
-                                                     onClick={() => {
-                                                        setCurrentMatchIndex((prev) => prev === matches.length - 1 ? 0 : prev + 1)
-                                                    }}
-                                                     className="text-sm text-blue-400"
-                                               >
-                                                    Next
-                                               </button>
-                                           </div>
+                                        <button
+                                            onClick={() => {
+                                            setCurrentMatchIndex((prev) =>
+                                                prev === matches.length - 1 ? 0 : prev + 1
+                                            );
+                                            }}
+                                            className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700 transition hover:bg-emerald-100"
+                                        >
+                                            Next
+                                        </button>
+                                        </div>
 
-                                           <p>{highlightMatch(searchSnippet, documentSearch)}</p>
-                                        </>
-
+                                        <p className="rounded-xl border border-slate-200 bg-white p-4 leading-6 text-slate-700">
+                                        {highlightMatch(searchSnippet, documentSearch)}
+                                        </p>
+                                    </>
                                     ) : (
-                                        <p className="text-slate-500">No match found.</p>
+                                    <p className="rounded-xl border border-dashed border-slate-300 bg-white p-4 text-center text-slate-500">
+                                        No match found.
+                                    </p>
                                     )}
                                 </div>
                             )}
@@ -394,63 +525,85 @@ export default function DashboardPage() {
 
                     
 
-                    <button 
-                       className="mt-4 rounded-xl bg-blue-600 px-4 py-2 text-white hover:bg-blue-500"
-                    >
+                    <button disabled={selectedDocument.status !== "ready"} className="mt-6 rounded-xl bg-emerald-600 px-5 py-3 font-semibold text-white shadow-md shadow-emerald-600/20 transition hover:bg-emerald-700">
                         Ask About This Document
                     </button>
                 </div>    
 
             )}
 
-            <div className="mt-8 rounded-2xl border border-slate-700 bg-slate-900 p-6">
-                <h2 className="text-xl font-semibold text-white">
-                    Search Across Documents
-                </h2>
+            {activeSection === "search" && (
+                 <div className="mt-6 rounded-3xl border border-slate-300 bg-white/85 p-6 shadow-xl shadow-slate-200/70 backdrop-blur">
+                    <div className="mb-5">
+                        <p className="text-sm font-medium text-emerald-700">
+                            Document Search
+                        </p>
 
-                <input 
-                    value={globalDocumentSearch}
-                    onChange={(e) => setGlobalDocumentSearch(e.target.value)}
-                    placeholder="Search all uploaded documents..."
-                    className="mt-4 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none"
-                />
+                        <h2 className="mt-1 text-xl font-semibold text-slate-950">
+                            Search Across Documents
+                        </h2>
 
-                {globalDocumentSearch && (
-                    <div className="mt-4 space-y-4">
-                        {globalSearchResults.length === 0 ? (
-                            <p className="text-sm text-slate-500">
-                                No matches found across your documents
-                            </p>
-                        ) : (
-                            globalSearchResults.map((result) => (
-                                <div
-                                    key={result.document.id}
-                                    className="rounded-xl bg-slate-950 p-4"
-                                >
-                                    <p className="font-medium text-white">
-                                        {result.document.name}
+                        <p className="mt-1 text-sm text-slate-500">
+                            Find matching content across your uploaded document library.
+                        </p>
+
+                    </div>
+                
+    
+                    <input 
+                        value={globalDocumentSearch}
+                        onChange={(e) => setGlobalDocumentSearch(e.target.value)}
+                        placeholder="Search all uploaded documents..."
+                        className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                    />
+    
+                    {globalDocumentSearch && (
+                        <div className="mt-5 space-y-4">
+                            {globalSearchResults.length === 0 ? (
+                                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+                                    <p className="text-sm text-slate-500">
+                                        No matches found across your documents.
                                     </p>
-
-                                    <p className="mt-2 text-sm text-slate-300">
-                                        {highlightMatch(result.snippet, globalDocumentSearch)}
-                                    </p>
-
-                                    <p className="mt-1 text-xs text-slate-500">
-                                        {result.matches} {result.matches !== 1 ? "matches" : "match"}
-                                    </p>
-
-                                    <button
-                                        onClick={() => setSelectedDocument(result.document)}
-                                        className="mt-3 text-sm text-blue-400 hover:text-blue-300"
+                                </div>
+                            ) : (
+                                globalSearchResults.map((result) => (
+                                    <div
+                                        key={result.document.id}
+                                        className="rounded-2xl border border-slate-200 bg-slate-50 p-5 shadow-sm transition hover:border-emerald-200"
                                     >
-                                        View Document
-                                    </button>
-                                </div>    
-                            ))
-                        )}
-                    </div>    
-                )}
-            </div>
+                                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                            <div>
+                                                <p className="font-semibold text-slate-900">
+                                                    {result.document.name}
+                                                </p>
+                                                <p className="mt-1 text-xs text-slate-500">
+                                                    {result.matches}{" "}
+                                                    {result.matches !== 1 ? "matches" : "match"}
+                                                </p>
+                                            </div>  
+
+                                            <button 
+                                                 onClick={() => setSelectedDocument(result.document)}
+                                                 className="text-sm font-medium text-emerald-700 hover:text-emerald-800"
+                                            >
+                                                View Document
+                                            </button>   
+                                        </div> 
+
+                                        <p className="mt-4 rounded-xl border border-slate-200 bg-white p-4 text-sm leading-6 text-slate-700">
+                                            {highlightMatch(result.snippet, globalDocumentSearch)}
+                                        </p>   
+                                        
+                                    </div>    
+                                ))
+                            )}
+                        </div>    
+                    )}
+                </div>
+
+            )}
+
+           
         </AppShell>     
     )
 }
