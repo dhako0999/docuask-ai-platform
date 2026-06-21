@@ -136,6 +136,37 @@ export default function ChatWindow() {
 
                     <p>{message.content}</p>
 
+                    {message.role === "assistant" && 
+                     message.sources && 
+                     message.sources.length > 0 && (
+                        <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3">
+                            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                Sources
+                            </p>
+
+                            <div className="space-y-2">
+                                {message.sources.map((source, index) => (
+                                    <div
+                                        key={`${source.documentId}-${source.chunkIndex}`}
+                                        className="rounded-lg border border-slate-200 bg-slate-50 p-3"
+                                      >
+                                        <p className="text-xs font-semibold text-slate-900">
+                                            {source.documentName}
+                                        </p>
+
+                                        <p className="mt-1 text-xs text-slate-500">
+                                            Source {source.sourceNumber} • Chunk {source.chunkIndex + 1}
+                                        </p>
+
+                                        <p className="mt-1 text-xs leading-5 text-slate-600">
+                                            {source.preview}
+                                        </p>
+                                    </div>    
+                                ))}
+                            </div>   
+                        </div>    
+                    )}
+
                     <button
                     onClick={() => deleteMessage(index)}
                     className={`mt-2 text-xs font-medium ${

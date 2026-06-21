@@ -37,6 +37,41 @@ export default function DashboardPage() {
         },
     ];
 
+    function parseDate(value?: string | number | null): Date | null {
+        if (value === undefined || value === null || value === "") {
+          return null;
+        }
+      
+        const stringValue = String(value);
+      
+        const isNumericTimestamp = /^\d+$/.test(stringValue);
+      
+        const date = isNumericTimestamp
+          ? new Date(Number(stringValue))
+          : new Date(stringValue);
+      
+        if (Number.isNaN(date.getTime())) {
+          return null;
+        }
+      
+        return date;
+    }
+      
+    function isValidDate(value?: string | number | null): boolean {
+        return parseDate(value) !== null;
+    }
+      
+    function formatDate(value?: string | number | null): string {
+        const date = parseDate(value);
+      
+        if (!date) {
+          return "Date unavailable";
+        }
+      
+        return date.toLocaleString();
+    }
+
+
     const documentActivity = documents.map((doc) => ({
         id: doc.id,
         title: `Uploaded ${doc.name}`,
@@ -49,10 +84,48 @@ export default function DashboardPage() {
         time: message.createdAt,
     }));
 
+    const recentActivity = [...documentActivity, ...messageActivity]
+        .filter((activity) => isValidDate(activity.time))
+        .sort((a, b) => {
+            const dateA = parseDate(a.time);
+            const dateB = parseDate(b.time);
 
-    const recentActivity = [...documentActivity, ...messageActivity].sort((a, b) => (
-        new Date(b.time).getTime() - new Date(a.time).getTime()
-    ));
+            return (dateB?.getTime() ?? 0) - (dateA?.getTime() ?? 0);
+    });
+
+
+    
+
+
+    /*function isValidDate(value?: string) {
+        if (!value) return false;
+      
+        const date = new Date(value);
+      
+        return !Number.isNaN(date.getTime());
+      }
+      
+      const documentActivity = documents.map((doc) => ({
+        id: doc.id,
+        title: `Uploaded ${doc.name}`,
+        time: doc.uploadedAt,
+      }));
+      
+      const messageActivity = messages.map((message, index) => ({
+        id: `${message.role}-${index}`,
+        title:
+          message.role === "user"
+            ? `Asked ${message.content}`
+            : "AI answered a question",
+        time: message.createdAt,
+      }));
+      
+      const recentActivity = [...documentActivity, ...messageActivity]
+        .filter((activity) => isValidDate(activity.time))
+        .sort(
+          (a, b) =>
+            new Date(b.time).getTime() - new Date(a.time).getTime()
+        );*/
 
     const sortedDocuments = [...documents].sort((a, b) => (
        new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
@@ -145,18 +218,6 @@ export default function DashboardPage() {
 
     const readingTimeMinutes = Math.max(1, Math.ceil(wordCount / 200));
 
-    function formatDate(value?: string) {
-        if(!value) return "Date unavailable";
-
-        const date = new Date(value);
-
-        if(Number.isNaN(date.getTime())) {
-            return "Date unavailable";
-        }
-
-        return date.toLocaleString();
-    }
-
     
 
     return (
@@ -212,7 +273,7 @@ export default function DashboardPage() {
                                     </p>
     
                                     <p className="mt-2 text-xs text-slate-500">
-                                        Asked {new Date(question.createdAt).toLocaleString()}
+                                        Asked {formatDate(question.createdAt)}
                                     </p>
                                 </div>    
                             ))
@@ -245,7 +306,7 @@ export default function DashboardPage() {
                                         {response.content}
                                     </p>
                                     <p className="mt-2 text-xs text-slate-500">
-                                        {new Date(response.createdAt).toLocaleString()}
+                                        {formatDate(response.createdAt)}
                                     </p>
                                 </div>
 
@@ -302,7 +363,7 @@ export default function DashboardPage() {
                                 >
                                     <p className="font-semibold text-slate-900">{doc.name}</p>
                                     <p className="mt-1 text-slate-500">{(doc.size / 1024).toFixed(1)} KB</p>
-                                    <p className="mt-1 text-xs text-slate-500">Uploaded {new Date(doc.uploadedAt).toLocaleString()}</p>
+                                    <p className="mt-1 text-xs text-slate-500">Uploaded {formatDate(doc.uploadedAt)}</p>
                                     <div className="mt-4 space-y-3">
                                         <DocumentStatusBadge status={doc.status} />
                                         <div className="flex items-center gap-4">

@@ -1,13 +1,20 @@
 import { createSchema, createYoga } from "graphql-yoga";
 import { prisma } from "@/lib/prisma";
 import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
-import { openai } from "@/lib/openai";
+/*import { openai } from "@/lib/openai";*/
 
-import { chunkText } from "@/lib/rag/chunkText";
+/*import { chunkText } from "@/lib/rag/chunkText";
 import { createEmbedding } from "@/lib/rag/embeddings";
 
-import { retrieveRelevantChunks } from "@/lib/rag/retrieveRelevantChunks";
+import { retrieveRelevantChunks } from "@/lib/rag/retrieveRelevantChunks";*/
 import { retrieveAcrossDocuments} from "@/lib/rag/retrieveAcrossDocuments";
+
+
+import { keywordSearchChunks } from "@/lib/rag/keywordSearch";
+import { retrieveHybridChunks, retrieveHybridAcrossDocuments } from "@/lib/rag/hybridSearch";
+
+import type { AnswerSource } from "@/lib/graphql";
+
  
 
 const s3 = new S3Client({
@@ -56,6 +63,7 @@ const schema = createSchema({
 
     type AskQuestionResponse {
       answer: String!
+      sources: [AnswerSource!]!
     }
 
     type Conversation {
@@ -321,19 +329,40 @@ const schema = createSchema({
             
         });
 
-        const relevantChunks = await retrieveRelevantChunks(
+        const relevantChunks = await retrieveHybridChunks(
           args.documentId,
           args.question
         );
 
+        //console.log("Relevant chunks for sources:", relevantChunks);
 
-        console.log("Question:", args.question);
+        const sources: AnswerSource[] = relevantChunks.map(
+          (chunk, index) => ({
+            sourceNumber: index + 1,
+            documentId: args.documentId,
+            documentName: document.name,
+            chunkIndex: chunk.chunkIndex,
+            similarity: chunk.similarity,
+            preview: chunk.content.slice(0, 180),
+          })
+
+        );
+
+        /*const keywordResults = await keywordSearchChunks(
+          args.question,
+          args.documentId
+        );*/
+
+
         console.log(
-            relevantChunks.map(chunk => ({
-              chunkIndex: chunk.chunkIndex,
-              similarity: chunk.similarity,
-              preview: chunk.content.slice(0, 100),
-            }))
+          "Hybrid results:",
+          relevantChunks.map((chunk) => ({
+            chunkIndex: chunk.chunkIndex,
+            vectorScore: chunk.vectorScore,
+            keywordScore: chunk.keywordScore,
+            hybridScore: chunk.hybridScore,
+            preview: chunk.content.slice(0, 80),
+          }))
         );
 
         const context = relevantChunks.map((chunk, index) => `
@@ -380,7 +409,7 @@ const schema = createSchema({
         const aiServiceUrl = process.env.AI_SERVICE_URL;
 
         if(!aiServiceUrl) {
-          throw new Error("API_SERVICE_URL is not configured");
+          throw new Error("AI_SERVICE_URL is not configured");
         }
 
         const aiResponse = await fetch(`${aiServiceUrl}/answer-question`, {
@@ -414,6 +443,7 @@ const schema = createSchema({
 
         return {
           answer: data.answer,
+          sources,
         }
 
 
@@ -424,7 +454,7 @@ const schema = createSchema({
         _parent,
         args: { question: string }
       ) => {
-        const relevantChunks = await retrieveAcrossDocuments(args.question);
+        const relevantChunks = await retrieveHybridAcrossDocuments(args.question);
 
         if(relevantChunks.length === 0) {
           return {

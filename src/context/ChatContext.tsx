@@ -8,6 +8,8 @@ import type { UploadedDocument } from "@/types/document";
 
 import { graphqlRequest, askAcrossDocuments, analyzeDocument, researchAcrossDocuments, compareDocuments } from "@/lib/graphql";
 
+import type { AnswerSource } from "@/lib/graphql";
+
 
 type ChatContextType = {
     messages: Message[];
@@ -69,17 +71,27 @@ export function ChatProvider({ children } : { children: React.ReactNode }) {
 
         try {
             let aiContent = "";
+            let dataSources: AnswerSource[] = [];
 
             if(selectedDocument) {
                 const data = await graphqlRequest<{
                    askQuestion: {
                        answer: string;
+                       sources: AnswerSource[];
                    };
                 }>(
                     `
                        mutation AskQuestion($documentId: ID!, $question: String!) {
                            askQuestion(documentId: $documentId, question: $question) {
-                               answer
+                               answer,
+                               sources {
+                                   sourceNumber,
+                                   documentId,
+                                   documentName,
+                                   chunkIndex,
+                                   similarity, 
+                                   preview
+                               }
                            
                            }
                        
@@ -93,6 +105,10 @@ export function ChatProvider({ children } : { children: React.ReactNode }) {
                 );
 
                 aiContent = data.askQuestion.answer;
+                dataSources = data.askQuestion.sources.slice(0, 5);
+
+                console.log("Sources:", data.askQuestion.sources);
+                
             } else {
                 aiContent = "Please select a document before asking a question.";
             }
@@ -102,6 +118,8 @@ export function ChatProvider({ children } : { children: React.ReactNode }) {
                 content: aiContent,
                 createdAt: new Date().toISOString(),
                 mode: "selected",
+                sources: dataSources,
+               
             }
 
             setMessages((prevs) => [...prevs, aiMessage]);
