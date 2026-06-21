@@ -6,6 +6,8 @@ import { useChat } from "@/context/ChatContext";
 
 import { useDocuments } from "@/context/DocumentsContext";
 
+import ReactMarkdown from "react-markdown";
+
 type Message = {
     role: "user" | "assistant";
     content: string;
@@ -58,6 +60,8 @@ export default function ChatWindow() {
     }
 
     const comparisonDocument = documents.find((doc) => doc.id === comparisonDocumentId) ?? null;
+
+    const isStreamingAssistant = loading && messages.length > 0 && messages[messages.length - 1].role === "assistant";
 
 
 
@@ -116,10 +120,10 @@ export default function ChatWindow() {
                 {messages.map((message, index) => (
                 <div
                     key={index}
-                    className={`max-w-xl rounded-2xl p-4 text-sm shadow-sm ${
+                    className={`relative max-w-xl rounded-2xl p-4 text-sm shadow-sm ${
                     message.role === "user"
-                        ? "ml-auto bg-emerald-600 text-white"
-                        : "border border-slate-200 bg-slate-50 text-slate-800"
+                         ? "ml-auto bg-emerald-600 text-white" 
+                         : "border border-slate-200 bg-slate-50 text-slate-800"
                     }`}
                 >
                     {message.mode === "all" && (
@@ -134,7 +138,17 @@ export default function ChatWindow() {
                     </p>
                     )}
 
-                    <p>{message.content}</p>
+                    <div
+                    className={
+                        message.role === "user"
+                        ? "prose prose-sm max-w-none prose-invert"
+                        : "prose prose-sm max-w-none prose-headings:mt-6 prose-headings:mb-3 prose-headings:border-b prose-headings:border-slate-200 prose-headings:pb-2 prose-headings:font-bold prose-headings:text-slate-900 prose-p:my-2 prose-ul:my-3 prose-li:my-1 prose-hr:my-6"
+                    }
+                    >
+                    <ReactMarkdown>{message.content}</ReactMarkdown>
+                    </div>  
+
+                   
 
                     {message.role === "assistant" && 
                      message.sources && 
@@ -180,7 +194,7 @@ export default function ChatWindow() {
                 </div>
                 ))}
 
-                {loading && (
+                {loading && !isStreamingAssistant && (
                 <div className="max-w-xs rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 shadow-sm">
                     Thinking...
                 </div>

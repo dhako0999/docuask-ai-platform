@@ -56,7 +56,7 @@ export function ChatProvider({ children } : { children: React.ReactNode }) {
 
     }, [messages, hasLoaded]);
 
-    async function sendMessage(content: string, selectedDocument: UploadedDocument | null, documents: UploadedDocument[]) {
+   /* async function sendMessage(content: string, selectedDocument: UploadedDocument | null, documents: UploadedDocument[]) {
         if(!content.trim()) return;
 
         const userMessage: Message = {
@@ -140,6 +140,132 @@ export function ChatProvider({ children } : { children: React.ReactNode }) {
 
         }
         
+    }*/
+
+    
+    async function sendMessage(
+      content: string,
+      selectedDocument: UploadedDocument | null,
+      documents: UploadedDocument[]
+    ) {
+      if (!content.trim()) return;
+    
+      const userMessage: Message = {
+        role: "user",
+        content,
+        createdAt: new Date().toISOString(),
+        mode: "selected",
+      };
+    
+      setMessages((prev) => [...prev, userMessage]);
+      setLoading(true);
+
+    
+      try {
+        if (!selectedDocument) {
+          const aiMessage: Message = {
+            role: "assistant",
+            content: "Please select a document before asking a question.",
+            createdAt: new Date().toISOString(),
+            mode: "selected",
+          };
+    
+          setMessages((prevs) => [...prevs, aiMessage]);
+          return;
+        }
+
+        await fetch("/api/chat/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            documentId: selectedDocument.id,
+            role: "user",
+            content,
+          }),
+        });
+    
+        const assistantMessage: Message = {
+          role: "assistant",
+          content: "",
+          createdAt: new Date().toISOString(),
+          mode: "selected",
+          sources: [],
+        };
+    
+        setMessages((prevs) => [...prevs, assistantMessage]);
+    
+        const response = await fetch("/api/chat/selected-stream", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            documentId: selectedDocument.id,
+            question: content,
+          }),
+        });
+    
+        if (!response.ok || !response.body) {
+          throw new Error("Streaming response failed");
+        }
+    
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+    
+        let streamedAnswer = "";
+    
+        while (true) {
+          const { done, value } = await reader.read();
+    
+          if (done) break;
+    
+          const chunk = decoder.decode(value, { stream: true });
+          streamedAnswer += chunk;
+    
+          setMessages((prev) =>
+            prev.map((message, index) =>
+              index === prev.length - 1
+                ? {
+                    ...message,
+                    content: streamedAnswer,
+                  }
+                : message
+            )
+          );
+        }
+
+        const saveAssistantRes = await fetch("/api/chat/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            documentId: selectedDocument.id,
+            role: "assistant",
+            content: streamedAnswer,
+          }),
+        });
+
+        if(!saveAssistantRes) {
+          throw new Error("Failed to save assistant message");
+        }
+
+
+      } catch (error) {
+        console.error("Send message error: ", error);
+    
+        const errorMessage: Message = {
+          role: "assistant",
+          content: "Sorry, I could not answer that question.",
+          createdAt: new Date().toISOString(),
+        };
+    
+        setMessages((prevs) => [...prevs, errorMessage]);
+      } finally {
+        setLoading(false);
+      }
     }
 
     async function sendMessageAcrossDocuments(content: string) {

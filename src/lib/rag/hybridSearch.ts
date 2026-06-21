@@ -62,7 +62,7 @@ export function mergeHybridResults(
         hybridScore: result.vectorScore * 0.7 + result.keywordScore * 0.3,
     }))
     .sort((a, b) => b.hybridScore - a.hybridScore)
-    .slice(0, 10);
+    .slice(0, 20);
 }
 
 
