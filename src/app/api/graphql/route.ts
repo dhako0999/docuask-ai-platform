@@ -277,7 +277,10 @@ const schema = createSchema({
             throw new Error("Failed to queue document processing");
           }
 
-          return document;
+          return {
+            ...document,
+            chunkCount: 0,
+          };
       
           
         } catch (error) {
@@ -771,13 +774,17 @@ const schema = createSchema({
   },
 });
 
-const yoga = createYoga({
+const { handleRequest } = createYoga({
   schema,
   graphqlEndpoint: "/api/graphql",
+  fetchAPI: {
+    Response,
+    Request,
+  },
 });
 
 export {
-  yoga as GET,
-  yoga as POST,
+  handleRequest as GET,
+  handleRequest as POST,
 };
 
