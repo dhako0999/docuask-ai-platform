@@ -257,10 +257,16 @@ const schema = createSchema({
 
          
   
-          const res = await fetch(`${process.env.AI_SERVICE_URL}/process-document`, {
+          const aiServiceUrl = process.env.AI_SERVICE_URL;
+
+          if (!aiServiceUrl) {
+            throw new Error("AI_SERVICE_URL is not configured");
+          }
+
+          const res = await fetch(`${aiServiceUrl}/process-document`, {
             method: "POST",
             headers: {
-              "Content-Type": "application/json"
+              "Content-Type": "application/json",
             },
             body: JSON.stringify({
               document_id: document.id,
