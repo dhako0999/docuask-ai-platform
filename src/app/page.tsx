@@ -1,4 +1,5 @@
 import RagPipelineAnimation from "@/components/RagPipelineAnimation";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -18,13 +19,19 @@ export default function Home() {
         </p>
 
         <div className="flex flex-col gap-3 sm:flex-row">
-          <button className="rounded-xl bg-emerald-600 px-6 py-3 font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700">
+          <Link
+            href="/upload"
+            className="rounded-xl bg-emerald-600 px-6 py-3 font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700"
+          >
             Get Started
-          </button>
+          </Link>
 
-          <button className="rounded-xl border border-amber-300 bg-amber-50 px-6 py-3 font-semibold text-amber-800 shadow-sm transition hover:bg-amber-100">
+          <Link
+            href="/dashboard"
+            className="rounded-xl border border-amber-300 bg-amber-50 px-6 py-3 font-semibold text-amber-800 shadow-sm transition hover:bg-amber-100"
+          >
             View Demo
-          </button>
+          </Link>
         </div>
 
         <RagPipelineAnimation />
