@@ -774,7 +774,7 @@ const schema = createSchema({
   },
 });
 
-const { handleRequest } = createYoga({
+const yoga = createYoga({
   schema,
   graphqlEndpoint: "/api/graphql",
   fetchAPI: {
@@ -783,8 +783,11 @@ const { handleRequest } = createYoga({
   },
 });
 
-export {
-  handleRequest as GET,
-  handleRequest as POST,
-};
+export async function GET(request: Request): Promise<Response> {
+  return yoga.fetch(request);
+}
+
+export async function POST(request: Request): Promise<Response> {
+  return yoga.fetch(request);
+}
 
